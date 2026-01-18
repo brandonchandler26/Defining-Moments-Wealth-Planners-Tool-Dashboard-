@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RMD vs Roth Conversion Tool</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <!-- Shared Dashboard Libraries -->
+  <script src="constants.js"></script>
+  <script src="state-manager.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'brand-navy': '#00205B',
+            'brand-navy-light': '#003380',
+            'brand-gold': '#D4AF37',
+            'brand-gold-hover': '#B5952F',
+            'brand-light': '#F9F9F7',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    @media print {
+      @page {
+        size: portrait;
+        margin: 0.5in;
+      }
+
+      body {
+        background: white !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      .print-only {
+        display: block !important;
+      }
+
+      .print-page {
+        page-break-after: always;
+        min-height: 100vh;
+        padding: 0;
+      }
+
+      .print-page:last-child {
+        page-break-after: avoid;
+      }
+
+      .print-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 9pt;
+      }
+
+      .print-table th,
+      .print-table td {
+        border: 1px solid #d1d5db;
+        padding: 4px 6px;
+        text-align: right;
+      }
+
+      .print-table th {
+        background-color: #00205B !important;
+        color: white !important;
+        font-weight: 600;
+        text-align: center;
+      }
+
+      .print-table tr:nth-child(even) {
+        background-color: #f9fafb;
+      }
+
+      .print-table .rmd-row {
+        background-color: #fef3c7 !important;
+      }
+
+      .print-header {
+        text-align: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 3px solid #D4AF37;
+      }
+
+      .print-header h1 {
+        color: #00205B;
+        font-size: 18pt;
+        margin: 0 0 5px 0;
+      }
+
+      .print-header p {
+        color: #6b7280;
+        font-size: 10pt;
+        margin: 0;
+      }
+
+      .print-summary-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+
+      .print-summary-box {
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 12px;
+      }
+
+      .print-summary-box h3 {
+        color: #00205B;
+        font-size: 11pt;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+        padding-bottom: 5px;
+        border-bottom: 2px solid #D4AF37;
+      }
+
+      .print-summary-box .item {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10pt;
+        margin: 4px 0;
+      }
+
+      .print-summary-box .item .label {
+        color: #6b7280;
+      }
+
+      .print-summary-box .item .value {
+        font-weight: 600;
+        color: #00205B;
+      }
+
+      .print-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .print-kpi-box {
+        text-align: center;
+        padding: 10px;
+        border: 2px solid #D4AF37;
+        border-radius: 8px;
+      }
+
+      .print-kpi-box .label {
+        font-size: 8pt;
+        color: #6b7280;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+
+      .print-kpi-box .value {
+        font-size: 14pt;
+        font-weight: 700;
+        color: #00205B;
+      }
+
+      .print-page-title {
+        color: #00205B;
+        font-size: 12pt;
+        font-weight: 600;
+        margin: 0 0 10px 0;
+        padding-bottom: 5px;
+        border-bottom: 2px solid #D4AF37;
+      }
+
+      .print-footer {
+        position: fixed;
+        bottom: 0.3in;
+        left: 0.5in;
+        right: 0.5in;
+        text-align: center;
+        font-size: 8pt;
+        color: #9ca3af;
+      }
+    }
+
+    .print-only {
+      display: none;
+    }
+
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #F9F9F7;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #D4AF37;
+      border-radius: 5px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #D4AF37;
+      border-radius: 3px;
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: #D4AF37 !important;
+      box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2) !important;
+    }
+  </style>
+</head>
+
+<body class="bg-brand-light text-gray-800">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useCallback } = React;
+    const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Area, Bar } = Recharts;
+
+    const IconWrapper = ({ children, className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>);
+    const Calculator = ({ className }) => <IconWrapper className={className}><rect width="16" height="20" x="4" y="2" rx="2" /><line x1="8" x2="16" y1="6" y2="6" /><line x1="16" x2="16" y1="14" y2="18" /><path d="M16 10h.01" /><path d="M12 10h.01" /><path d="M8 10h.01" /><path d="M12 14h.01" /><path d="M8 14h.01" /><path d="M12 18h.01" /><path d="M8 18h.01" /></IconWrapper>;
+    const TrendingUp = ({ className }) => <IconWrapper className={className}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /><polyline points="16 7 22 7 22 13" /></IconWrapper>;
+    const Layers = ({ className }) => <IconWrapper className={className}><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" /><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" /><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" /></IconWrapper>;
+    const ArrowRight = ({ className }) => <IconWrapper className={className}><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></IconWrapper>;
+    const FileSpreadsheet = ({ className }) => <IconWrapper className={className}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="M8 13h2" /><path d="M14 13h2" /><path d="M8 17h2" /><path d="M14 17h2" /></IconWrapper>;
+    const Printer = ({ className }) => <IconWrapper className={className}><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect width="12" height="8" x="6" y="14" /></IconWrapper>;
+    const ChevronDown = ({ className }) => <IconWrapper className={className}><path d="m6 9 6 6 6-6" /></IconWrapper>;
+    const ChevronUp = ({ className }) => <IconWrapper className={className}><path d="m18 15-6-6-6 6" /></IconWrapper>;
+    const RefreshCw = ({ className }) => <IconWrapper className={className}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" /></IconWrapper>;
+    const Percent = ({ className }) => <IconWrapper className={className}><line x1="19" y1="5" x2="5" y2="19" /><circle cx="6.5" cy="6.5" r="2.5" /><circle cx="17.5" cy="17.5" r="2.5" /></IconWrapper>;
+
+    // Use RMD factors from shared constants - Table III (Uniform Lifetime)
+    const uniformLifetimeTable = (typeof FinancialConstants !== 'undefined' && FinancialConstants.rmdFactors) || { 72: 27.4, 73: 26.5, 74: 25.5, 75: 24.6, 76: 23.7, 77: 22.9, 78: 22.0, 79: 21.1, 80: 20.2, 81: 19.4, 82: 18.5, 83: 17.7, 84: 16.8, 85: 16.0, 86: 15.2, 87: 14.4, 88: 13.7, 89: 12.9, 90: 12.2, 91: 11.5, 92: 10.8, 93: 10.1, 94: 9.5, 95: 8.9, 96: 8.4, 97: 7.8, 98: 7.3, 99: 6.8, 100: 6.4, 101: 6.0, 102: 5.6, 103: 5.2, 104: 4.9, 105: 4.6, 106: 4.3, 107: 4.1, 108: 3.9, 109: 3.7, 110: 3.5, 111: 3.4, 112: 3.3, 113: 3.1, 114: 3.0, 115: 2.9, 116: 2.8, 117: 2.7, 118: 2.5, 119: 2.3, 120: 2.0 };
+
+    // Determine which RMD table to use based on IRS rules
+    const getRMDFactor = (ownerAge, spouseAge, isSpouseSoleBeneficiary, spouseBirthYear, ownerBirthYear) => {
+      // Use Joint and Last Survivor Table (Table II) if:
+      // 1. Spouse is the sole designated beneficiary, AND
+      // 2. Spouse is more than 10 years younger than the owner
+      const ageDifference = spouseAge !== null ? (ownerBirthYear - spouseBirthYear) : 0;
+
+      if (isSpouseSoleBeneficiary && ageDifference > 10 && spouseAge !== null) {
+        // Use FinancialConstants helper if available, otherwise use local lookup
+        if (typeof FinancialConstants !== 'undefined' && FinancialConstants.getJointRMDFactor) {
+          const jointFactor = FinancialConstants.getJointRMDFactor(ownerAge, spouseAge);
+          if (jointFactor) {
+            return { factor: jointFactor, tableUsed: 'Joint' };
+          }
+        }
+      }
+
+      // Otherwise use Uniform Lifetime Table (Table III)
+      return { factor: uniformLifetimeTable[ownerAge] || uniformLifetimeTable[120], tableUsed: 'Uniform' };
+    };
+
+
+    // Validation constants
+    const MIN_BIRTH_YEAR = 1920;
+    const MAX_BIRTH_YEAR = 2010;
+    const MAX_PROJECTION_AGE = 120;
+    const MAX_TAX_RATE = 50;
+
+    // Use shared getRMDStartAge if available
+    const getRMDStartAge = (birthYear) => {
+      if (typeof FinancialConstants !== 'undefined' && FinancialConstants.getRMDStartAge) {
+        return FinancialConstants.getRMDStartAge(birthYear);
+      }
+      return birthYear >= 1960 ? 75 : 73;
+    };
+
+    // Get initial birth year from GlobalStateManager
+    const getInitialBirthYear = () => {
+      if (typeof GlobalStateManager !== 'undefined') {
+        const birthYear = GlobalStateManager.getBirthYear(1);
+        if (birthYear && birthYear >= MIN_BIRTH_YEAR && birthYear <= MAX_BIRTH_YEAR) {
+          return birthYear;
+        }
+      }
+      return 1960;
+    };
+
+    // Get initial balance from GlobalStateManager
+    const getInitialBalance = () => {
+      if (typeof GlobalStateManager !== 'undefined') {
+        const state = GlobalStateManager.getState();
+        if (state.portfolio?.preTax > 0) {
+          return state.portfolio.preTax;
+        }
+      }
+      return 500000;
+    };
+
+    const Card = ({ children, className = "" }) => <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>{children}</div>;
+    const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+    const formatPercent = (val) => `${val > 0 ? '+' : ''}${val.toFixed(1)}%`;
+
+    // Seeded PRNG (Mulberry32) for reproducible Monte Carlo simulations
+    let currentSeed = Date.now();
+    const mulberry32 = (seed) => {
+      return function () {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    };
+    let seededRandom = mulberry32(currentSeed);
+
+    // Reset seed for reproducibility
+    const resetSeed = (newSeed) => {
+      currentSeed = newSeed || Date.now();
+      seededRandom = mulberry32(currentSeed);
+      return currentSeed;
+    };
+
+    const generateStructuredMarketReturns = (targetYears, seed) => {
+      // Use seeded PRNG for reproducibility
+      if (seed !== undefined) resetSeed(seed);
+      const random = seededRandom;
+
+      const returns = [];
+      const crashes = { "gd": [-0.08, -0.25, -0.43, -0.08], "ww2": [-0.004, -0.10, -0.12], "dc": [-0.09, -0.12, -0.22], "stag": [-0.15, -0.26] };
+      const randn = () => { let u = 0, v = 0; while (u === 0) u = random(); while (v === 0) v = random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+      while (returns.length < targetYears) {
+        const sr = random(); let st = sr > 0.82 ? 'dynasty' : sr > 0.53 ? 'solid' : 'short';
+        let dur = st === 'short' ? Math.floor(random() * 3) + 1 : st === 'solid' ? Math.floor(random() * 3) + 4 : Math.floor(random() * 2) + 8;
+        for (let i = 0; i < dur && returns.length < targetYears; i++) returns.push(Math.max(0.01, (0.15 + (randn() * 0.10))) * 100);
+        if (returns.length >= targetYears) break;
+        if (random() < 0.24) { const cr = random(); const cv = cr < 0.25 ? crashes.gd : cr < 0.50 ? crashes.ww2 : cr < 0.75 ? crashes.dc : crashes.stag; for (let v of cv) { if (returns.length >= targetYears) break; returns.push(v * 100); } }
+        else returns.push(Math.min(-0.01, (-0.10 + (randn() * 0.05))) * 100);
+      }
+      return returns.slice(0, targetYears);
+    };
+
+    const calculateProjection = (birthYear, currentBalance, returnSequence, standardPreRMD, preRMDOverrides, standardRothConv, rothConvOverrides, rmdStartAge, endAge, fedTaxRate, stateTaxRate, delayFirstRMD = false, spouseBirthYear = null, isSpouseSoleBeneficiary = false) => {
+      // Validate inputs - fail early if data is corrupt
+      const safeNum = (x, fallback = 0) => {
+        const n = parseFloat(x);
+        return (isNaN(n) || !isFinite(n)) ? fallback : n;
+      };
+      const roundCents = (x) => Math.round(x * 100) / 100; // Prevent floating-point drift
+
+      const currentYear = new Date().getFullYear();
+      const currentAge = currentYear - Math.round(safeNum(birthYear, 1960));
+      const totalTaxRate = (safeNum(fedTaxRate, 22) + safeNum(stateTaxRate, 5)) / 100;
+
+      let tradBalance = roundCents(safeNum(currentBalance, 0));
+      let rothBalance = 0;
+      let age = currentAge, year = currentYear, data = [], idx = 0;
+      let totalRMDTaken = 0, totalConverted = 0, totalTaxesPaid = 0;
+      let firstRMDDelayed = false, delayedRMDAmount = 0;
+
+      while (age <= endAge) {
+        const isRMDYear = age >= rmdStartAge;
+        const rate = safeNum(returnSequence[idx], 6.0);
+        const tradGrowth = roundCents(tradBalance * (rate / 100));
+        const rothGrowth = roundCents(rothBalance * (rate / 100));
+        let withdrawal = 0, conversion = 0, isRMD = false, rmdFactor = null, tableUsed = 'Uniform';
+
+        if (isRMDYear) {
+          isRMD = true;
+          // Calculate spouse age for this year
+          const spouseAge = spouseBirthYear ? (year - spouseBirthYear) : null;
+          // Get the appropriate RMD factor based on IRS rules
+          const rmdResult = getRMDFactor(age, spouseAge, isSpouseSoleBeneficiary, spouseBirthYear, birthYear);
+          rmdFactor = rmdResult.factor;
+          tableUsed = rmdResult.tableUsed;
+          let currentYearRMD = roundCents(tradBalance / rmdFactor);
+
+          // Handle first RMD delay (April 1 rule)
+          if (delayFirstRMD && age === rmdStartAge && !firstRMDDelayed) {
+            delayedRMDAmount = currentYearRMD;
+            withdrawal = 0;
+            firstRMDDelayed = true;
+          } else if (delayFirstRMD && age === rmdStartAge + 1 && delayedRMDAmount > 0) {
+            withdrawal = currentYearRMD + delayedRMDAmount;
+            delayedRMDAmount = 0;
+          } else {
+            withdrawal = currentYearRMD;
+          }
+          totalRMDTaken += withdrawal;
+        } else {
+          withdrawal = preRMDOverrides[age] !== undefined ? safeNum(preRMDOverrides[age]) : safeNum(standardPreRMD);
+          conversion = rothConvOverrides[age] !== undefined ? safeNum(rothConvOverrides[age]) : safeNum(standardRothConv);
+        }
+
+        // Prevent negative balance - cap withdrawals at available funds
+        const availableFunds = Math.max(0, tradBalance + tradGrowth);
+        if (withdrawal + conversion > availableFunds) {
+          if (withdrawal > availableFunds) {
+            withdrawal = availableFunds;
+            conversion = 0;
+          } else {
+            conversion = availableFunds - withdrawal;
+          }
+        }
+
+        let tradEndBalance = roundCents(Math.max(0, tradBalance + tradGrowth - withdrawal - conversion));
+        const taxPaid = roundCents((withdrawal + conversion) * totalTaxRate);
+        totalTaxesPaid += taxPaid;
+        totalConverted += conversion;
+
+        let rothEndBalance = roundCents(rothBalance + rothGrowth + conversion);
+
+        data.push({
+          year, age, rate,
+          tradStartBalance: tradBalance, tradGrowth, withdrawal, conversion,
+          isRMD, rmdFactor, tableUsed, tradEndBalance,
+          rothStartBalance: rothBalance, rothGrowth, rothEndBalance,
+          totalEndBalance: tradEndBalance + rothEndBalance, taxPaid
+        });
+
+        if (tradEndBalance <= 0 && rothEndBalance <= 0 && age > 100) break;
+        tradBalance = tradEndBalance;
+        rothBalance = rothEndBalance;
+        age++;
+        year++;
+        idx++;
+      }
+      return {
+        data,
+        finalTradBalance: data[data.length - 1]?.tradEndBalance || 0,
+        finalRothBalance: data[data.length - 1]?.rothEndBalance || 0,
+        totalRMDTaken: roundCents(totalRMDTaken),
+        totalConverted: roundCents(totalConverted),
+        totalTaxesPaid: roundCents(totalTaxesPaid)
+      };
+    };
+
+    const App = () => {
+      const currentYear = new Date().getFullYear();
+      const [birthYear, setBirthYear] = useState(getInitialBirthYear());
+      const [birthYearInput, setBirthYearInput] = useState(String(getInitialBirthYear()));
+      const [birthYear2, setBirthYear2] = useState(getInitialBirthYear());
+      const [birthYearInput2, setBirthYearInput2] = useState(String(getInitialBirthYear()));
+      const [currentBalance, setCurrentBalance] = useState(getInitialBalance());
+      const [currentBalance2, setCurrentBalance2] = useState(0);
+      const [endAge, setEndAge] = useState(95);
+      const [endAgeInput, setEndAgeInput] = useState('95');
+      const [standardPreRMD, setStandardPreRMD] = useState(0);
+      const [standardRothConv, setStandardRothConv] = useState(0);
+      const [fedTaxRate, setFedTaxRate] = useState(22);
+      const [stateTaxRate, setStateTaxRate] = useState(5);
+      const [returnMode, setReturnMode] = useState('fixed');
+      const [rateOfReturn, setRateOfReturn] = useState(6.0);
+      const [singleSequence, setSingleSequence] = useState([]);
+      const [monteCarloStats, setMonteCarloStats] = useState(null);
+      const [preRMDOverrides, setPreRMDOverrides] = useState({});
+      const [rothConvOverrides, setRothConvOverrides] = useState({});
+      const [showOverrides, setShowOverrides] = useState(false);
+      const [delayFirstRMD, setDelayFirstRMD] = useState(false);
+
+      const [clientType, setClientType] = useState('single');
+      const [clientName1, setClientName1] = useState('');
+      const [clientName2, setClientName2] = useState('');
+
+      // Per-spouse beneficiary designation (for Joint mode)
+      const [client1SpouseIsBeneficiary, setClient1SpouseIsBeneficiary] = useState(false);
+      const [client2SpouseIsBeneficiary, setClient2SpouseIsBeneficiary] = useState(false);
+      const [showRMDTableInfo1, setShowRMDTableInfo1] = useState(false);
+      const [showRMDTableInfo2, setShowRMDTableInfo2] = useState(false);
+
+      // Per-spouse strategy inputs (for Joint mode)
+      const [standardPreRMD2, setStandardPreRMD2] = useState(0);
+      const [standardRothConv2, setStandardRothConv2] = useState(0);
+      const [preRMDOverrides2, setPreRMDOverrides2] = useState({});
+      const [rothConvOverrides2, setRothConvOverrides2] = useState({});
+
+      // Legacy single-spouse support
+      const spouseIsSoleBeneficiary = client1SpouseIsBeneficiary;
+      const setSpouseIsSoleBeneficiary = setClient1SpouseIsBeneficiary;
+      const showRMDTableInfo = showRMDTableInfo1;
+      const setShowRMDTableInfo = setShowRMDTableInfo1;
+
+      // Scenario management state
+      const [savedScenarios, setSavedScenarios] = useState([]);
+
+      const getClientDisplayName = () => {
+        if (clientName1 && clientType === 'joint' && clientName2) {
+          return `${clientName1} & ${clientName2}`;
+        }
+        return clientName1 || '';
+      };
+
+      // Input validation handlers
+      const validateBirthYear = (val) => {
+        const num = Number(val);
+        if (isNaN(num)) return 1965;
+        return Math.max(MIN_BIRTH_YEAR, Math.min(MAX_BIRTH_YEAR, num));
+      };
+      const handleBirthYearChange = (e) => {
+        setBirthYearInput(e.target.value); // Allow any input while typing
+      };
+      const handleBirthYearBlur = () => {
+        const validated = validateBirthYear(birthYearInput);
+        setBirthYear(validated);
+        setBirthYearInput(String(validated));
+      };
+      const handleBirthYear2Change = (e) => {
+        setBirthYearInput2(e.target.value);
+      };
+      const handleBirthYear2Blur = () => {
+        const validated = validateBirthYear(birthYearInput2);
+        setBirthYear2(validated);
+        setBirthYearInput2(String(validated));
+      };
+      const validateBalance = (val) => Math.max(0, Number(val) || 0);
+      const validateEndAge = (val, minAge) => Math.max(minAge, Math.min(MAX_PROJECTION_AGE, Number(val) || 95));
+      const handleEndAgeChange = (e) => {
+        setEndAgeInput(e.target.value); // Allow any input while typing
+      };
+      const handleEndAgeBlur = () => {
+        const validated = validateEndAge(endAgeInput, currentAge);
+        setEndAge(validated);
+        setEndAgeInput(String(validated));
+      };
+      const validateTaxRate = (val) => Math.max(0, Math.min(MAX_TAX_RATE, Number(val) || 0));
+
+      // Combined balance for calculations
+      const totalTraditionalBalance = clientType === 'joint' ? currentBalance + currentBalance2 : currentBalance;
+
+      // Get display label for balance fields
+      const getClient1Label = () => clientName1 || 'Client 1';
+      const getClient2Label = () => clientName2 || 'Client 2';
+
+      const currentAge = currentYear - birthYear;
+      const currentAge2 = currentYear - birthYear2;
+      const rmdStartAge = getRMDStartAge(birthYear);
+      const rmdStartAge2 = getRMDStartAge(birthYear2);
+      const yearsUntilRMD = rmdStartAge - currentAge;
+      const yearsUntilRMD2 = rmdStartAge2 - currentAge2;
+
+      const runMonteCarlo = useCallback(() => {
+        const iterations = 1000, results = [], baselineResults = [], yearsToProject = Math.max(1, endAge - currentAge + 5);
+        for (let i = 0; i < iterations; i++) {
+          const sequence = generateStructuredMarketReturns(yearsToProject);
+          const strategyRun = calculateProjection(birthYear, totalTraditionalBalance, sequence, standardPreRMD, preRMDOverrides, standardRothConv, rothConvOverrides, rmdStartAge, endAge, fedTaxRate, stateTaxRate, delayFirstRMD, clientType === 'joint' ? birthYear2 : null, spouseIsSoleBeneficiary);
+          const baselineRun = calculateProjection(birthYear, totalTraditionalBalance, sequence, 0, {}, 0, {}, rmdStartAge, endAge, fedTaxRate, stateTaxRate, false, clientType === 'joint' ? birthYear2 : null, spouseIsSoleBeneficiary);
+          results.push({ finalTotalBalance: strategyRun.finalTradBalance + strategyRun.finalRothBalance, finalTradBalance: strategyRun.finalTradBalance, finalRothBalance: strategyRun.finalRothBalance, totalRMDTaken: strategyRun.totalRMDTaken, totalTaxesPaid: strategyRun.totalTaxesPaid, data: strategyRun.data, sequence });
+          baselineResults.push({ finalTotalBalance: baselineRun.finalTradBalance, totalRMDTaken: baselineRun.totalRMDTaken, totalTaxesPaid: baselineRun.totalTaxesPaid });
+        }
+        results.sort((a, b) => a.finalTotalBalance - b.finalTotalBalance);
+        baselineResults.sort((a, b) => a.finalTotalBalance - b.finalTotalBalance);
+        const p10 = results[Math.floor(iterations * 0.1)], p50 = results[Math.floor(iterations * 0.5)], p90 = results[Math.floor(iterations * 0.9)], p50Baseline = baselineResults[Math.floor(iterations * 0.5)];
+        setMonteCarloStats({ p10, p50, p90, medianBaselineRMD: p50Baseline.totalRMDTaken, medianStrategyRMD: p50.totalRMDTaken, medianTotalConverted: p50.data.reduce((a, r) => a + r.conversion, 0), medianStrategyTaxes: p50.totalTaxesPaid, medianBaselineTaxes: p50Baseline.totalTaxesPaid });
+        setReturnMode('monte_carlo');
+      }, [birthYear, birthYear2, clientType, spouseIsSoleBeneficiary, currentAge, totalTraditionalBalance, standardPreRMD, preRMDOverrides, standardRothConv, rothConvOverrides, rmdStartAge, endAge, fedTaxRate, stateTaxRate, delayFirstRMD]);
+
+      const generateSinglePath = useCallback((mode) => {
+        const yearsToProject = Math.max(1, endAge - currentAge + 5);
+        const sequence = mode === 'fixed' ? Array(yearsToProject).fill(parseFloat(rateOfReturn)) : generateStructuredMarketReturns(yearsToProject);
+        setSingleSequence(sequence);
+        setReturnMode(mode === 'fixed' ? 'fixed' : 'simulated_single');
+        setMonteCarloStats(null);
+      }, [rateOfReturn, currentAge, endAge]);
+
+      useEffect(() => { if (returnMode !== 'monte_carlo') generateSinglePath(returnMode === 'fixed' ? 'fixed' : 'simulated_single'); }, [endAge]);
+
+      const { displayData, displayData2, comparisonStats, breakdown } = useMemo(() => {
+        if (returnMode === 'monte_carlo' && monteCarloStats) {
+          return { displayData: monteCarloStats.p50.data, displayData2: null, comparisonStats: { rmdStrategy: monteCarloStats.medianStrategyRMD, rmdBaseline: monteCarloStats.medianBaselineRMD, taxesStrategy: monteCarloStats.medianStrategyTaxes, taxesBaseline: monteCarloStats.medianBaselineTaxes, isMedian: true }, breakdown: { trad: monteCarloStats.p50.finalTradBalance, roth: monteCarloStats.p50.finalRothBalance } };
+        }
+        const sequenceToUse = singleSequence.length ? singleSequence : Array(100).fill(6);
+
+        if (clientType === 'joint') {
+          // Client 1's projection using their own RMD table selection
+          const client1UseJoint = client1SpouseIsBeneficiary && (birthYear - birthYear2 > 10);
+          const run1 = calculateProjection(birthYear, currentBalance, sequenceToUse, standardPreRMD, preRMDOverrides, standardRothConv, rothConvOverrides, rmdStartAge, endAge, fedTaxRate, stateTaxRate, delayFirstRMD, client1UseJoint ? birthYear2 : null, client1UseJoint);
+          const baseline1 = calculateProjection(birthYear, currentBalance, sequenceToUse, 0, {}, 0, {}, rmdStartAge, endAge, fedTaxRate, stateTaxRate, false, client1UseJoint ? birthYear2 : null, client1UseJoint);
+
+          // Client 2's projection using their own RMD table selection  
+          const client2UseJoint = client2SpouseIsBeneficiary && (birthYear2 - birthYear > 10);
+          const run2 = calculateProjection(birthYear2, currentBalance2, sequenceToUse, standardPreRMD2, preRMDOverrides2, standardRothConv2, rothConvOverrides2, rmdStartAge2, endAge, fedTaxRate, stateTaxRate, delayFirstRMD, client2UseJoint ? birthYear : null, client2UseJoint);
+          const baseline2 = calculateProjection(birthYear2, currentBalance2, sequenceToUse, 0, {}, 0, {}, rmdStartAge2, endAge, fedTaxRate, stateTaxRate, false, client2UseJoint ? birthYear : null, client2UseJoint);
+
+          return {
+            displayData: run1.data,
+            displayData2: run2.data,
+            comparisonStats: {
+              rmdStrategy: run1.totalRMDTaken + run2.totalRMDTaken,
+              rmdBaseline: baseline1.totalRMDTaken + baseline2.totalRMDTaken,
+              taxesStrategy: run1.totalTaxesPaid + run2.totalTaxesPaid,
+              taxesBaseline: baseline1.totalTaxesPaid + baseline2.totalTaxesPaid,
+              isMedian: false
+            },
+            breakdown: {
+              trad: run1.finalTradBalance + run2.finalTradBalance,
+              roth: run1.finalRothBalance + run2.finalRothBalance,
+              trad1: run1.finalTradBalance,
+              roth1: run1.finalRothBalance,
+              trad2: run2.finalTradBalance,
+              roth2: run2.finalRothBalance
+            }
+          };
+        }
+
+        // Single client mode
+        const strategyRun = calculateProjection(birthYear, totalTraditionalBalance, sequenceToUse, standardPreRMD, preRMDOverrides, standardRothConv, rothConvOverrides, rmdStartAge, endAge, fedTaxRate, stateTaxRate, delayFirstRMD, null, false);
+        const baselineRun = calculateProjection(birthYear, totalTraditionalBalance, sequenceToUse, 0, {}, 0, {}, rmdStartAge, endAge, fedTaxRate, stateTaxRate, false, null, false);
+        return { displayData: strategyRun.data, displayData2: null, comparisonStats: { rmdStrategy: strategyRun.totalRMDTaken, rmdBaseline: baselineRun.totalRMDTaken, taxesStrategy: strategyRun.totalTaxesPaid, taxesBaseline: baselineRun.totalTaxesPaid, isMedian: false }, breakdown: { trad: strategyRun.finalTradBalance, roth: strategyRun.finalRothBalance } };
+      }, [returnMode, monteCarloStats, singleSequence, birthYear, birthYear2, clientType, client1SpouseIsBeneficiary, client2SpouseIsBeneficiary, currentBalance, currentBalance2, totalTraditionalBalance, standardPreRMD, standardPreRMD2, preRMDOverrides, preRMDOverrides2, standardRothConv, standardRothConv2, rothConvOverrides, rothConvOverrides2, rmdStartAge, rmdStartAge2, endAge, fedTaxRate, stateTaxRate, delayFirstRMD]);
+
+      const firstRMD = displayData.find(d => d.isRMD);
+      const finalTotalBalance = breakdown.trad + breakdown.roth;
+      const chartData = useMemo(() => {
+        if (returnMode !== 'monte_carlo' || !monteCarloStats) return displayData;
+        const { p10, p50, p90 } = monteCarloStats;
+        return p50.data.map((row, i) => ({ ...row, p10Balance: p10.data[i]?.totalEndBalance, p90Balance: p90.data[i]?.totalEndBalance }));
+      }, [displayData, returnMode, monteCarloStats]);
+
+      const rmdDifference = comparisonStats.rmdBaseline - comparisonStats.rmdStrategy;
+      const taxDifference = comparisonStats.taxesBaseline - comparisonStats.taxesStrategy;
+
+      const handleExportCSV = () => {
+        const headers = ["Age", "Year", "TradBalance", "RothBalance", "Return%", "Withdrawal", "Conversion", "TaxPaid", "TotalEndBalance"];
+        const rows = displayData.map(r => [r.age, r.year, r.tradStartBalance.toFixed(2), r.rothStartBalance.toFixed(2), r.rate.toFixed(2), r.withdrawal.toFixed(2), r.conversion.toFixed(2), r.taxPaid.toFixed(2), r.totalEndBalance.toFixed(2)]);
+        const csv = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+        const link = document.createElement("a"); link.href = encodeURI(csv); link.download = "rmd_roth_projection.csv"; link.click();
+      };
+
+      // Load saved scenarios from localStorage on mount
+      useEffect(() => {
+        const loaded = localStorage.getItem('rmdToolSavedScenarios');
+        if (loaded) {
+          try {
+            setSavedScenarios(JSON.parse(loaded));
+          } catch (e) {
+            console.warn('Failed to load saved scenarios', e);
+          }
+        }
+      }, []);
+
+      // Get current scenario data for save/export
+      const getCurrentScenarioData = () => ({
+        clientType, clientName1, clientName2,
+        birthYear, birthYear2, currentBalance, currentBalance2, endAge,
+        standardPreRMD, standardRothConv, fedTaxRate, stateTaxRate,
+        returnMode, rateOfReturn, preRMDOverrides, rothConvOverrides, delayFirstRMD
+      });
+
+      // Save scenario to localStorage
+      const handleSaveScenario = () => {
+        const scenarioName = prompt('Enter a name for this scenario:', getClientDisplayName() || 'My Scenario');
+        if (!scenarioName) return;
+        const tagName = prompt('Enter a tag (e.g. Base, Optimistic, Conservative):', 'Base');
+
+        const newScenario = {
+          name: scenarioName,
+          tag: tagName || 'No Tag',
+          data: getCurrentScenarioData(),
+          timestamp: new Date().toISOString()
+        };
+
+        const updatedScenarios = [newScenario, ...savedScenarios.filter(s => s.name !== scenarioName)].slice(0, 20);
+        setSavedScenarios(updatedScenarios);
+        localStorage.setItem('rmdToolSavedScenarios', JSON.stringify(updatedScenarios));
+        alert(`Scenario "${scenarioName}" saved!`);
+      };
+
+      // Load scenario from saved list
+      const handleLoadScenario = (scenario) => {
+        if (!scenario) return;
+        const d = scenario.data;
+
+        setClientType(d.clientType || 'single');
+        setClientName1(d.clientName1 || '');
+        setClientName2(d.clientName2 || '');
+        setBirthYear(d.birthYear || 1960);
+        setBirthYearInput(String(d.birthYear || 1960));
+        setBirthYear2(d.birthYear2 || 1960);
+        setBirthYearInput2(String(d.birthYear2 || 1960));
+        setCurrentBalance(d.currentBalance || 0);
+        setCurrentBalance2(d.currentBalance2 || 0);
+        setEndAge(d.endAge || 95);
+        setEndAgeInput(String(d.endAge || 95));
+        setStandardPreRMD(d.standardPreRMD || 0);
+        setStandardRothConv(d.standardRothConv || 0);
+        setFedTaxRate(d.fedTaxRate || 22);
+        setStateTaxRate(d.stateTaxRate || 5);
+        setReturnMode(d.returnMode || 'fixed');
+        setRateOfReturn(d.rateOfReturn || 6.0);
+        setPreRMDOverrides(d.preRMDOverrides || {});
+        setRothConvOverrides(d.rothConvOverrides || {});
+        setDelayFirstRMD(d.delayFirstRMD || false);
+
+        alert(`Scenario "${scenario.name}" loaded!`);
+      };
+
+      // Export to JSON file
+      const handleExportJSON = () => {
+        const data = {
+          name: getClientDisplayName() || 'RMD Scenario',
+          exportDate: new Date().toISOString(),
+          tool: 'RMD-Roth Tool',
+          scenario: getCurrentScenarioData()
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `rmd_scenario_${(getClientDisplayName() || 'export').replace(/[^a-z0-9]/gi, '_')}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+      };
+
+      // Import from JSON file
+      const handleImportJSON = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const data = JSON.parse(event.target.result);
+            if (data.scenario) {
+              handleLoadScenario({ name: data.name || 'Imported', data: data.scenario });
+            } else {
+              alert('Invalid scenario file format.');
+            }
+          } catch (err) {
+            alert('Error reading JSON file: ' + err.message);
+          }
+        };
+        reader.readAsText(file);
+        e.target.value = null; // Reset file input
+      };
+
+      return (
+        <div className="min-h-screen bg-brand-light font-sans text-gray-800">
+          <div className="no-print p-4 md:p-6">
+            <div className="max-w-7xl mx-auto space-y-5">
+              <div className="text-center pb-5 border-b-4 border-brand-gold">
+                <h1 className="text-2xl md:text-3xl font-bold text-brand-navy flex items-center justify-center gap-3"><Calculator className="w-7 h-7 text-brand-gold" />RMD vs Roth Conversion Tool</h1>
+                <p className="text-gray-500 mt-1 text-sm">SECURE 2.0 Compliant • Monte Carlo Analysis • Conversion Strategy</p>
+                <div className="flex justify-center gap-3 mt-4">
+                  <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 bg-brand-navy hover:bg-brand-navy-light text-white rounded-lg font-semibold text-sm shadow-sm"><FileSpreadsheet className="w-4 h-4" />Export CSV</button>
+                  <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-brand-gold hover:bg-brand-gold-hover text-brand-navy rounded-lg font-semibold text-sm shadow-sm"><Printer className="w-4 h-4" />Print PDF</button>
+                </div>
+              </div>
+
+              {/* Scenario Manager */}
+              <div className="p-4 bg-gray-50 rounded-lg border-t-4 border-brand-gold shadow-md">
+                <div className="flex flex-wrap justify-between items-center mb-3 border-b border-gray-200 pb-2 gap-2">
+                  <h2 className="text-xs font-bold text-brand-navy uppercase tracking-widest">Scenario Manager</h2>
+                </div>
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="flex gap-2 w-full md:w-auto flex-grow">
+                    <select
+                      className="flex-grow p-2 border-2 border-gray-200 rounded-md text-sm"
+                      onChange={(e) => handleLoadScenario(savedScenarios.find(s => s.name === e.target.value))}
+                      defaultValue=""
+                    >
+                      <option value="">Load Saved Scenario...</option>
+                      {savedScenarios.map(s => <option key={s.name} value={s.name}>{s.name} [{s.tag}]</option>)}
+                    </select>
+                    <button onClick={handleSaveScenario} className="px-4 py-2 bg-white hover:bg-gray-100 text-brand-navy border-2 border-brand-navy rounded-md font-semibold text-sm">Save</button>
+                  </div>
+                  <div className="flex gap-2 items-center w-full md:w-auto justify-end">
+                    <button onClick={handleExportJSON} className="px-4 py-2 bg-white hover:bg-gray-100 text-gray-700 border-2 border-gray-300 rounded-md text-sm">Export JSON</button>
+                    <label className="cursor-pointer px-4 py-2 bg-brand-navy hover:bg-brand-navy-light text-white rounded-md font-semibold text-sm">
+                      Import JSON
+                      <input type="file" accept=".json" className="hidden" onChange={handleImportJSON} />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                <div className="lg:col-span-4 space-y-4">
+                  <Card>
+                    <div className="bg-brand-navy text-white p-3 rounded-t-xl flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-brand-gold"></span><h2 className="text-sm font-semibold uppercase tracking-wide">Client Inputs</h2></div>
+                    <div className="p-4 space-y-4">
+                      {/* Client Name Entry */}
+                      <div className="bg-brand-gold/10 p-3 rounded-lg border border-brand-gold/30">
+                        <div className="flex items-center gap-4 mb-2">
+                          <span className="text-xs font-bold text-brand-navy uppercase">Client Type:</span>
+                          <label className="flex items-center gap-1 text-xs cursor-pointer">
+                            <input type="radio" name="clientType" value="single" checked={clientType === 'single'} onChange={(e) => setClientType(e.target.value)} className="accent-brand-navy" /> Single
+                          </label>
+                          <label className="flex items-center gap-1 text-xs cursor-pointer">
+                            <input type="radio" name="clientType" value="joint" checked={clientType === 'joint'} onChange={(e) => setClientType(e.target.value)} className="accent-brand-navy" /> Joint
+                          </label>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <input type="text" value={clientName1} onChange={(e) => setClientName1(e.target.value)} placeholder="Client Name" className="w-full p-2 border-2 border-gray-200 rounded-md text-sm" />
+                          {clientType === 'joint' && <input type="text" value={clientName2} onChange={(e) => setClientName2(e.target.value)} placeholder="Spouse Name" className="w-full p-2 border-2 border-gray-200 rounded-md text-sm" />}
+                        </div>
+                        {getClientDisplayName() && <div className="mt-2 text-xs font-semibold text-brand-navy">Prepared for: {getClientDisplayName()}</div>}
+                      </div>
+                      {clientType === 'single' ? (
+                        <>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div><label className="block text-xs font-bold text-brand-navy mb-1 uppercase">Birth Year</label><input type="text" inputMode="numeric" value={birthYearInput} onChange={handleBirthYearChange} onBlur={handleBirthYearBlur} className="w-full p-2 border-2 border-gray-200 rounded-md font-mono text-sm" placeholder="e.g. 1965" /></div>
+                            <div><label className="block text-xs font-bold text-brand-navy mb-1 uppercase">Project to Age</label><input type="text" inputMode="numeric" value={endAgeInput} onChange={handleEndAgeChange} onBlur={handleEndAgeBlur} className="w-full p-2 border-2 border-gray-200 rounded-md font-mono text-sm" placeholder="e.g. 95" /></div>
+                          </div>
+                          <div className="text-xs text-gray-500">RMD Start Age: <span className="font-bold text-brand-navy">{rmdStartAge}</span> ({yearsUntilRMD > 0 ? `${yearsUntilRMD} years away` : 'RMDs have begun'})</div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div><label className="block text-xs font-bold text-brand-navy mb-1 uppercase">{getClient1Label()}'s Birth Year</label><input type="text" inputMode="numeric" value={birthYearInput} onChange={handleBirthYearChange} onBlur={handleBirthYearBlur} className="w-full p-2 border-2 border-gray-200 rounded-md font-mono text-sm" placeholder="e.g. 1965" /></div>
+                            <div><label className="block text-xs font-bold text-brand-navy mb-1 uppercase">{getClient2Label()}'s Birth Year</label><input type="text" inputMode="numeric" value={birthYearInput2} onChange={handleBirthYear2Change} onBlur={handleBirthYear2Blur} className="w-full p-2 border-2 border-gray-200 rounded-md font-mono text-sm" placeholder="e.g. 1965" /></div>
+                          </div>
+                          <div><label className="block text-xs font-bold text-brand-navy mb-1 uppercase">Project to Age</label><input type="text" inputMode="numeric" value={endAgeInput} onChange={handleEndAgeChange} onBlur={handleEndAgeBlur} className="w-full p-2 border-2 border-gray-200 rounded-md font-mono text-sm" placeholder="e.g. 95" /></div>
+                          <div className="text-xs text-gray-500 space-y-1">
+                            <div>{getClient1Label()}: RMD Age <span className="font-bold text-brand-navy">{rmdStartAge}</span> ({yearsUntilRMD > 0 ? `${yearsUntilRMD} years away` : 'RMDs have begun'})</div>
+                            <div>{getClient2Label()}: RMD Age <span className="font-bold text-brand-navy">{rmdStartAge2}</span> ({yearsUntilRMD2 > 0 ? `${yearsUntilRMD2} years away` : 'RMDs have begun'})</div>
+                          </div>
+                        </>
+                      )}
+                      {yearsUntilRMD > 0 && (<div className="flex items-center gap-2 bg-brand-light p-2 rounded-md border border-gray-200"><input type="checkbox" id="delayRMD" checked={delayFirstRMD} onChange={(e) => setDelayFirstRMD(e.target.checked)} className="w-4 h-4 accent-brand-gold cursor-pointer" /><label htmlFor="delayRMD" className="text-xs text-gray-600 cursor-pointer">Delay first RMD to April 1 of following year <span className="text-[10px] text-gray-400">(results in 2 RMDs in year 2)</span></label></div>)}
+                      {clientType === 'single' ? (
+                        <div><label className="block text-xs font-bold text-brand-navy mb-1 uppercase">Current Traditional Balance</label><div className="relative"><span className="absolute left-3 top-2.5 text-gray-400 font-mono text-sm">$</span><input type="number" value={currentBalance} onChange={(e) => setCurrentBalance(validateBalance(e.target.value))} min={0} className="w-full pl-7 p-2 border-2 border-gray-200 rounded-md font-mono text-sm" /></div></div>
+                      ) : (
+                        <div className="space-y-4">
+                          {/* Client 1's Balance with Beneficiary Checkbox */}
+                          <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                            <label className="block text-xs font-bold text-brand-navy mb-1 uppercase">{getClient1Label()}'s Traditional Balance</label>
+                            <div className="relative mb-2">
+                              <span className="absolute left-3 top-2.5 text-gray-400 font-mono text-sm">$</span>
+                              <input type="number" value={currentBalance} onChange={(e) => setCurrentBalance(validateBalance(e.target.value))} min={0} className="w-full pl-7 p-2 border-2 border-gray-200 rounded-md font-mono text-sm bg-white" />
+                            </div>
+                            <label className="flex items-center gap-2 text-xs cursor-pointer">
+                              <input type="checkbox" checked={client1SpouseIsBeneficiary} onChange={(e) => setClient1SpouseIsBeneficiary(e.target.checked)} className="accent-brand-navy w-4 h-4" />
+                              <span className="font-semibold text-brand-navy">{getClient2Label()} is Sole Beneficiary</span>
+                              <button type="button" onClick={(e) => { e.preventDefault(); setShowRMDTableInfo1(!showRMDTableInfo1); }} className="ml-1 w-4 h-4 rounded-full bg-brand-navy text-white text-[10px] font-bold hover:bg-brand-gold transition-colors flex items-center justify-center" title="Learn about RMD tables">ⓘ</button>
+                            </label>
+                            {client1SpouseIsBeneficiary && (birthYear - birthYear2 > 10) && (
+                              <div className="mt-2 text-xs text-blue-700 bg-blue-100 p-2 rounded">
+                                <strong>✓ Joint Table (Table II):</strong> {getClient2Label()} is {birthYear - birthYear2} years younger → Lower RMDs
+                              </div>
+                            )}
+                            {client1SpouseIsBeneficiary && (birthYear - birthYear2 <= 10) && (
+                              <div className="mt-2 text-xs text-gray-600 bg-gray-100 p-2 rounded">
+                                <strong>Uniform Table (Table III):</strong> Age difference ({birthYear - birthYear2} years) not greater than 10
+                              </div>
+                            )}
+                            {!client1SpouseIsBeneficiary && (
+                              <div className="mt-2 text-xs text-gray-500">Using Uniform Lifetime Table (Table III)</div>
+                            )}
+                          </div>
+
+                          {/* Client 2's Balance with Beneficiary Checkbox */}
+                          <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                            <label className="block text-xs font-bold text-brand-navy mb-1 uppercase">{getClient2Label()}'s Traditional Balance</label>
+                            <div className="relative mb-2">
+                              <span className="absolute left-3 top-2.5 text-gray-400 font-mono text-sm">$</span>
+                              <input type="number" value={currentBalance2} onChange={(e) => setCurrentBalance2(validateBalance(e.target.value))} min={0} className="w-full pl-7 p-2 border-2 border-gray-200 rounded-md font-mono text-sm bg-white" />
+                            </div>
+                            <label className="flex items-center gap-2 text-xs cursor-pointer">
+                              <input type="checkbox" checked={client2SpouseIsBeneficiary} onChange={(e) => setClient2SpouseIsBeneficiary(e.target.checked)} className="accent-brand-navy w-4 h-4" />
+                              <span className="font-semibold text-brand-navy">{getClient1Label()} is Sole Beneficiary</span>
+                              <button type="button" onClick={(e) => { e.preventDefault(); setShowRMDTableInfo2(!showRMDTableInfo2); }} className="ml-1 w-4 h-4 rounded-full bg-brand-navy text-white text-[10px] font-bold hover:bg-brand-gold transition-colors flex items-center justify-center" title="Learn about RMD tables">ⓘ</button>
+                            </label>
+                            {client2SpouseIsBeneficiary && (birthYear2 - birthYear > 10) && (
+                              <div className="mt-2 text-xs text-blue-700 bg-blue-100 p-2 rounded">
+                                <strong>✓ Joint Table (Table II):</strong> {getClient1Label()} is {birthYear2 - birthYear} years younger → Lower RMDs
+                              </div>
+                            )}
+                            {client2SpouseIsBeneficiary && (birthYear2 - birthYear <= 10) && (
+                              <div className="mt-2 text-xs text-gray-600 bg-gray-100 p-2 rounded">
+                                <strong>Uniform Table (Table III):</strong> {getClient1Label()} is not more than 10 years younger
+                              </div>
+                            )}
+                            {!client2SpouseIsBeneficiary && (
+                              <div className="mt-2 text-xs text-gray-500">Using Uniform Lifetime Table (Table III)</div>
+                            )}
+                          </div>
+
+                          <div className="text-xs text-gray-500 bg-brand-light p-2 rounded-md">Combined Traditional Balance: <span className="font-bold text-brand-navy font-mono">{formatCurrency(totalTraditionalBalance)}</span></div>
+                        </div>
+                      )}
+
+                      <div className="bg-brand-light p-3 rounded-lg border border-gray-200">
+                        <label className="block text-xs font-bold text-brand-navy mb-2 uppercase">Return Strategy</label>
+                        {returnMode === 'fixed' && (<div className="relative mb-2"><input type="number" value={rateOfReturn} step="0.1" onChange={(e) => { setRateOfReturn(Number(e.target.value)); generateSinglePath('fixed'); }} className="w-full p-2 border-2 border-gray-200 rounded-md font-mono text-sm" /><span className="absolute right-3 top-2.5 text-gray-400 text-sm">%</span></div>)}
+                        <div className="flex flex-col gap-2">
+                          <button onClick={() => generateSinglePath('fixed')} className={`px-3 py-2 text-xs font-semibold rounded-lg border-2 flex items-center justify-center gap-2 ${returnMode === 'fixed' ? 'bg-brand-navy text-white border-brand-navy' : 'bg-white text-brand-navy border-brand-navy hover:bg-brand-light'}`}><TrendingUp className="w-3 h-3" />Fixed Rate</button>
+                          <button onClick={runMonteCarlo} className={`px-3 py-2 text-xs font-semibold rounded-lg border-2 flex items-center justify-center gap-2 ${returnMode === 'monte_carlo' ? 'bg-brand-gold text-brand-navy border-brand-gold' : 'bg-white text-brand-navy border-brand-gold hover:bg-yellow-50'}`}><Layers className="w-3 h-3" />Monte Carlo (1,000 Sims)</button>
+                        </div>
+                      </div>
+
+                      <div className="bg-brand-light p-3 rounded-lg border border-gray-200">
+                        <label className="block text-xs font-bold text-brand-navy mb-2 uppercase flex items-center gap-2"><Percent className="w-4 h-4" />Est. Tax Rates</label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div><label className="block text-xs font-semibold text-gray-600 mb-1">Federal</label><div className="relative"><input type="number" value={fedTaxRate} onChange={(e) => setFedTaxRate(validateTaxRate(e.target.value))} min={0} max={MAX_TAX_RATE} className="w-full p-2 pr-8 border-2 border-gray-200 rounded-md font-mono text-sm" /><span className="absolute right-3 top-2.5 text-gray-400 text-sm">%</span></div></div>
+                          <div><label className="block text-xs font-semibold text-gray-600 mb-1">State</label><div className="relative"><input type="number" value={stateTaxRate} onChange={(e) => setStateTaxRate(validateTaxRate(e.target.value))} min={0} max={MAX_TAX_RATE} className="w-full p-2 pr-8 border-2 border-gray-200 rounded-md font-mono text-sm" /><span className="absolute right-3 top-2.5 text-gray-400 text-sm">%</span></div></div>
+                        </div>
+                        <p className="text-[10px] text-gray-400 mt-2 italic">⚠️ Note: Uses flat combined rate. Actual tax depends on brackets and other income.</p>
+                      </div>
+
+                      {clientType === 'single' ? (
+                        <div className="bg-gradient-to-br from-brand-gold/10 to-white p-3 rounded-lg border-2 border-brand-gold/30">
+                          <label className="block text-xs font-bold text-brand-navy mb-2 uppercase flex items-center gap-2"><RefreshCw className="w-4 h-4 text-brand-gold" />Pre-RMD Strategy</label>
+                          <div className="space-y-3">
+                            <div><label className="block text-xs font-semibold text-gray-600 mb-1">Annual Withdrawal (Spend)</label><div className="relative"><span className="absolute left-3 top-2.5 text-gray-400 font-mono text-sm">$</span><input type="number" value={standardPreRMD} onChange={(e) => setStandardPreRMD(Number(e.target.value))} className="w-full pl-7 p-2 border-2 border-brand-gold/30 rounded-md font-mono text-sm" /></div></div>
+                            <div><label className="block text-xs font-semibold text-brand-navy mb-1">Annual Roth Conversion (Save)</label><div className="relative"><span className="absolute left-3 top-2.5 text-gray-400 font-mono text-sm">$</span><input type="number" value={standardRothConv} onChange={(e) => setStandardRothConv(Number(e.target.value))} className="w-full pl-7 p-2 border-2 border-brand-navy/30 rounded-md font-mono text-sm bg-brand-navy/5" /></div></div>
+                          </div>
+                          {yearsUntilRMD > 0 && (<div className="mt-3 pt-3 border-t border-brand-gold/30"><button onClick={() => setShowOverrides(!showOverrides)} className="text-xs text-brand-navy font-semibold flex items-center hover:text-brand-gold">{showOverrides ? <ChevronUp className="w-4 h-4 mr-1" /> : <ChevronDown className="w-4 h-4 mr-1" />}Customize By Year</button>
+                            {showOverrides && (<div className="mt-2 space-y-1 max-h-48 overflow-y-auto pr-2 custom-scrollbar">{displayData.filter(d => !d.isRMD).map((row) => (<div key={row.age} className="grid grid-cols-12 gap-1 items-center text-xs"><div className="col-span-3 text-gray-600 font-bold">{row.year}<br /><span className="font-normal text-[9px]">Age {row.age}</span></div><div className="col-span-4"><input type="number" placeholder="W/D" value={preRMDOverrides[row.age] !== undefined ? preRMDOverrides[row.age] : ''} onChange={(e) => setPreRMDOverrides({ ...preRMDOverrides, [row.age]: parseFloat(e.target.value) || 0 })} className="w-full p-1 border border-gray-300 rounded text-xs font-mono" /></div><div className="col-span-5"><input type="number" placeholder="Conv." value={rothConvOverrides[row.age] !== undefined ? rothConvOverrides[row.age] : ''} onChange={(e) => setRothConvOverrides({ ...rothConvOverrides, [row.age]: parseFloat(e.target.value) || 0 })} className="w-full p-1 border border-brand-navy/30 bg-brand-navy/5 rounded text-xs font-mono" /></div></div>))}</div>)}
+                          </div>)}
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {/* Client 1's Pre-RMD Strategy */}
+                          <div className="bg-gradient-to-br from-blue-100/50 to-white p-3 rounded-lg border-2 border-blue-200">
+                            <label className="block text-xs font-bold text-brand-navy mb-2 uppercase flex items-center gap-2"><RefreshCw className="w-4 h-4 text-blue-500" />{getClient1Label()}'s Pre-RMD Strategy</label>
+                            <div className="space-y-3">
+                              <div><label className="block text-xs font-semibold text-gray-600 mb-1">Annual Withdrawal</label><div className="relative"><span className="absolute left-3 top-2.5 text-gray-400 font-mono text-sm">$</span><input type="number" value={standardPreRMD} onChange={(e) => setStandardPreRMD(Number(e.target.value))} className="w-full pl-7 p-2 border-2 border-blue-200 rounded-md font-mono text-sm bg-white" /></div></div>
+                              <div><label className="block text-xs font-semibold text-brand-navy mb-1">Roth Conversion</label><div className="relative"><span className="absolute left-3 top-2.5 text-gray-400 font-mono text-sm">$</span><input type="number" value={standardRothConv} onChange={(e) => setStandardRothConv(Number(e.target.value))} className="w-full pl-7 p-2 border-2 border-brand-navy/30 rounded-md font-mono text-sm bg-brand-navy/5" /></div></div>
+                            </div>
+                          </div>
+
+                          {/* Client 2's Pre-RMD Strategy */}
+                          <div className="bg-gradient-to-br from-green-100/50 to-white p-3 rounded-lg border-2 border-green-200">
+                            <label className="block text-xs font-bold text-brand-navy mb-2 uppercase flex items-center gap-2"><RefreshCw className="w-4 h-4 text-green-500" />{getClient2Label()}'s Pre-RMD Strategy</label>
+                            <div className="space-y-3">
+                              <div><label className="block text-xs font-semibold text-gray-600 mb-1">Annual Withdrawal</label><div className="relative"><span className="absolute left-3 top-2.5 text-gray-400 font-mono text-sm">$</span><input type="number" value={standardPreRMD2} onChange={(e) => setStandardPreRMD2(Number(e.target.value))} className="w-full pl-7 p-2 border-2 border-green-200 rounded-md font-mono text-sm bg-white" /></div></div>
+                              <div><label className="block text-xs font-semibold text-brand-navy mb-1">Roth Conversion</label><div className="relative"><span className="absolute left-3 top-2.5 text-gray-400 font-mono text-sm">$</span><input type="number" value={standardRothConv2} onChange={(e) => setStandardRothConv2(Number(e.target.value))} className="w-full pl-7 p-2 border-2 border-brand-navy/30 rounded-md font-mono text-sm bg-brand-navy/5" /></div></div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                </div>
+
+                <div className="lg:col-span-8 space-y-4">
+                  <Card className="overflow-hidden">
+                    <div className="bg-brand-navy text-white p-3 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-brand-gold"></span><h3 className="text-sm font-semibold uppercase tracking-wide">Lifetime Tax Comparison</h3></div>
+                    <div className="p-4 bg-gradient-to-br from-brand-light to-green-50/30">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                        <div className="text-center md:text-left"><div className="text-xs text-gray-500 uppercase font-bold">Your Strategy Taxes</div><div className="text-xl font-bold text-brand-navy font-mono">{formatCurrency(comparisonStats.taxesStrategy)}</div></div>
+                        <div className="hidden md:flex justify-center text-gray-300"><ArrowRight className="w-6 h-6" /></div>
+                        <div className="text-center md:text-left"><div className="text-xs text-gray-500 uppercase font-bold">Do Nothing (Baseline)</div><div className="text-xl font-bold text-gray-600 font-mono">{formatCurrency(comparisonStats.taxesBaseline)}</div></div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                        <span className="text-sm font-medium text-gray-600">Net Tax Impact:</span>
+                        <span className={`text-lg font-bold font-mono ${taxDifference >= 0 ? 'text-green-600' : 'text-red-600'}`}>{taxDifference >= 0 ? 'Savings: ' : 'Extra Cost: '}{formatCurrency(Math.abs(taxDifference))}</span>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="overflow-hidden">
+                    <div className="bg-brand-navy text-white p-3 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-brand-gold"></span><h3 className="text-sm font-semibold uppercase tracking-wide">Lifetime RMD Analysis</h3></div>
+                    <div className="p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                        <div className="text-center md:text-left"><div className="text-xs text-gray-500 uppercase font-bold">Your Strategy RMDs</div><div className="text-xl font-bold text-brand-navy font-mono">{formatCurrency(comparisonStats.rmdStrategy)}</div></div>
+                        <div className="hidden md:flex justify-center text-gray-300"><ArrowRight className="w-6 h-6" /></div>
+                        <div className="text-center md:text-left"><div className="text-xs text-gray-500 uppercase font-bold">No Action Baseline</div><div className="text-xl font-bold text-gray-600 font-mono">{formatCurrency(comparisonStats.rmdBaseline)}</div></div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                        <span className="text-sm font-medium text-gray-600">RMD Reduction:</span>
+                        <span className={`text-lg font-bold font-mono ${rmdDifference >= 0 ? 'text-green-600' : 'text-red-600'}`}>{rmdDifference >= 0 ? formatCurrency(rmdDifference) : `+${formatCurrency(Math.abs(rmdDifference))}`}</span>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Card className="p-3 text-center border-2 border-brand-gold"><div className="text-xs text-gray-500 uppercase font-bold">End Trad. Balance</div><div className="text-lg font-bold text-brand-navy font-mono mt-1">{formatCurrency(breakdown.trad)}</div></Card>
+                    <Card className="p-3 text-center border-2 border-brand-navy"><div className="text-xs text-gray-500 uppercase font-bold">End Roth Balance</div><div className="text-lg font-bold text-brand-navy font-mono mt-1">{formatCurrency(breakdown.roth)}</div></Card>
+                    <Card className="p-3 text-center"><div className="text-xs text-gray-500 uppercase font-bold">First RMD</div><div className="text-lg font-bold text-brand-gold font-mono mt-1">{firstRMD ? formatCurrency(firstRMD.withdrawal) : '-'}</div><div className="text-[10px] text-gray-400">Age {rmdStartAge}</div></Card>
+                    <Card className="p-3 text-center bg-brand-navy"><div className="text-xs text-brand-gold uppercase font-bold">Total Wealth</div><div className="text-lg font-bold text-white font-mono mt-1">{formatCurrency(finalTotalBalance)}</div><div className="text-[10px] text-gray-300">At age {endAge}</div></Card>
+                  </div>
+
+                  <Card className="overflow-hidden">
+                    <div className="bg-brand-navy text-white p-3 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-brand-gold"></span><h3 className="text-sm font-semibold uppercase tracking-wide">Balance Projection {returnMode === 'monte_carlo' && '(Median)'}</h3></div>
+                    <div className="p-4 h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={chartData}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                          <XAxis dataKey="age" tick={{ fontSize: 10 }} />
+                          <YAxis yAxisId="left" tickFormatter={(v) => `$${(v / 1000000).toFixed(1)}M`} tick={{ fontSize: 10 }} />
+                          <Tooltip formatter={(value, name) => name.includes('Rate') ? formatPercent(value) : formatCurrency(value)} contentStyle={{ borderRadius: '8px', border: '2px solid #D4AF37' }} />
+                          <Legend wrapperStyle={{ fontSize: '11px' }} />
+                          <Area yAxisId="left" type="monotone" stackId="1" dataKey="tradEndBalance" name="Trad Balance" fill="#00205B" fillOpacity={0.3} stroke="#00205B" strokeWidth={2} />
+                          <Area yAxisId="left" type="monotone" stackId="1" dataKey="rothEndBalance" name="Roth Balance" fill="#D4AF37" fillOpacity={0.5} stroke="#D4AF37" strokeWidth={2} />
+                          {returnMode === 'monte_carlo' && (<><Line yAxisId="left" type="monotone" dataKey="p10Balance" name="10th %ile" stroke="#ef4444" strokeWidth={1} dot={false} strokeDasharray="5 5" /><Line yAxisId="left" type="monotone" dataKey="p90Balance" name="90th %ile" stroke="#10b981" strokeWidth={1} dot={false} strokeDasharray="5 5" /></>)}
+                          <Bar yAxisId="left" dataKey="withdrawal" name="Withdrawal" fill="#f97316" radius={[3, 3, 0, 0]} opacity={0.7} />
+                          <Bar yAxisId="left" dataKey="conversion" name="Roth Conv." fill="#8b5cf6" radius={[3, 3, 0, 0]} opacity={0.6} />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </Card>
+
+                  <Card className="overflow-hidden">
+                    <div className="bg-brand-navy text-white p-3 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-brand-gold"></span><h3 className="text-sm font-semibold uppercase tracking-wide">Annual Schedule {returnMode === 'monte_carlo' && "(Median)"}</h3></div>
+                    <div className="overflow-x-auto max-h-80 overflow-y-auto">
+                      {clientType === 'joint' && displayData2 ? (
+                        <table className="w-full text-xs text-left">
+                          <thead className="bg-brand-light text-brand-navy font-semibold sticky top-0 z-10 shadow-sm">
+                            <tr>
+                              <th className="p-2 pl-4" rowSpan="2">Year</th>
+                              <th className="p-2 text-center bg-blue-100 border-b-2 border-blue-300" colSpan="4">{getClient1Label()} {client1SpouseIsBeneficiary && (birthYear - birthYear2 > 10) ? '• Table II' : '• Table III'}</th>
+                              <th className="p-2 text-center bg-green-100 border-b-2 border-green-300" colSpan="4">{getClient2Label()} {client2SpouseIsBeneficiary && (birthYear2 - birthYear > 10) ? '• Table II' : '• Table III'}</th>
+                              <th className="p-2 text-right bg-brand-gold/20" rowSpan="2">Combined Total</th>
+                            </tr>
+                            <tr>
+                              <th className="p-1 text-center text-[10px] bg-blue-50">Factor</th>
+                              <th className="p-1 text-right text-[10px] bg-blue-50">Trad</th>
+                              <th className="p-1 text-right text-[10px] bg-blue-50">W/D</th>
+                              <th className="p-1 text-right text-[10px] bg-blue-50">Conv</th>
+                              <th className="p-1 text-center text-[10px] bg-green-50">Factor</th>
+                              <th className="p-1 text-right text-[10px] bg-green-50">Trad</th>
+                              <th className="p-1 text-right text-[10px] bg-green-50">W/D</th>
+                              <th className="p-1 text-right text-[10px] bg-green-50">Conv</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {displayData.map((row, i) => {
+                              const row2 = displayData2[i] || {};
+                              const combinedTotal = (row.totalEndBalance || 0) + (row2.totalEndBalance || 0);
+                              return (
+                                <tr key={row.year} className={`hover:bg-brand-light ${row.isRMD || row2.isRMD ? 'bg-brand-gold/10' : ''}`}>
+                                  <td className="p-2 pl-4 font-semibold text-brand-navy">
+                                    {row.year}
+                                    <div className="text-[9px] text-gray-400">{getClient1Label()} {row.age} / {getClient2Label()} {row2.age}</div>
+                                  </td>
+                                  <td className="p-1 text-center font-mono text-[10px] bg-blue-50/50">{row.rmdFactor || '-'}</td>
+                                  <td className="p-1 text-right font-mono text-[10px] text-blue-700">{formatCurrency(row.tradEndBalance)}</td>
+                                  <td className="p-1 text-right font-mono text-[10px] text-orange-600">{row.withdrawal > 0 ? formatCurrency(row.withdrawal) : '-'}</td>
+                                  <td className="p-1 text-right font-mono text-[10px] text-purple-600">{row.conversion > 0 ? formatCurrency(row.conversion) : '-'}</td>
+                                  <td className="p-1 text-center font-mono text-[10px] bg-green-50/50">{row2.rmdFactor || '-'}</td>
+                                  <td className="p-1 text-right font-mono text-[10px] text-green-700">{formatCurrency(row2.tradEndBalance || 0)}</td>
+                                  <td className="p-1 text-right font-mono text-[10px] text-orange-600">{(row2.withdrawal || 0) > 0 ? formatCurrency(row2.withdrawal) : '-'}</td>
+                                  <td className="p-1 text-right font-mono text-[10px] text-purple-600">{(row2.conversion || 0) > 0 ? formatCurrency(row2.conversion) : '-'}</td>
+                                  <td className="p-2 font-bold text-brand-navy font-mono text-right bg-brand-gold/10">{formatCurrency(combinedTotal)}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <table className="w-full text-xs text-left">
+                          <thead className="bg-brand-light text-brand-navy font-semibold sticky top-0 z-10 shadow-sm">
+                            <tr><th className="p-2 pl-4">Age</th><th className="p-2">Year</th><th className="p-2">RMD Factor</th><th className="p-2 text-right">Trad Bal</th><th className="p-2 text-right">Roth Bal</th><th className="p-2 text-center">Return</th><th className="p-2 text-right">W/D</th><th className="p-2 text-right">Conv</th><th className="p-2 text-right">Total</th></tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {displayData.map((row) => (
+                              <tr key={row.age} className={`hover:bg-brand-light ${row.isRMD ? 'bg-brand-gold/10' : ''}`}>
+                                <td className="p-2 pl-4 font-semibold text-brand-navy flex items-center gap-1">{row.age}{row.isRMD && row.age === rmdStartAge && <span className="text-[8px] bg-brand-gold text-brand-navy px-1 py-0.5 rounded font-bold">RMD</span>}</td>
+                                <td className="p-2 text-gray-500">{row.year}</td>
+                                <td className="p-2 text-gray-500 text-center font-mono">{row.rmdFactor || '-'}</td>
+                                <td className="p-2 text-brand-navy font-mono text-right">{formatCurrency(row.tradStartBalance)}</td>
+                                <td className="p-2 text-brand-gold font-mono text-right">{formatCurrency(row.rothStartBalance)}</td>
+                                <td className="p-2 text-center"><span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${row.rate < 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{formatPercent(row.rate)}</span></td>
+                                <td className="p-2 text-orange-600 font-mono font-medium text-right">{row.withdrawal > 0 ? formatCurrency(row.withdrawal) : '-'}</td>
+                                <td className="p-2 text-purple-600 font-mono font-medium text-right">{row.conversion > 0 ? formatCurrency(row.conversion) : '-'}</td>
+                                <td className="p-2 font-bold text-brand-navy font-mono text-right">{formatCurrency(row.totalEndBalance)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  </Card>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Print View - Only visible when printing */}
+          <div className="print-only">
+            {/* Page 1: Summary */}
+            <div className="print-page">
+              <div className="print-header">
+                <h1>RMD vs Roth Conversion Analysis</h1>
+                {getClientDisplayName() && <p style={{ fontWeight: 600, fontSize: '12pt', color: '#00205B' }}>Prepared for: {getClientDisplayName()}</p>}
+                <p>Generated {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              </div>
+
+              <div className="print-summary-grid">
+                <div className="print-summary-box">
+                  <h3>Client Information</h3>
+                  {clientType === 'single' ? (
+                    <>
+                      <div className="item"><span className="label">Birth Year:</span><span className="value">{birthYear}</span></div>
+                      <div className="item"><span className="label">Current Age:</span><span className="value">{currentAge}</span></div>
+                      <div className="item"><span className="label">RMD Start Age:</span><span className="value">{rmdStartAge}</span></div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="item"><span className="label">{getClient1Label()} Birth Year:</span><span className="value">{birthYear}</span></div>
+                      <div className="item"><span className="label">{getClient2Label()} Birth Year:</span><span className="value">{birthYear2}</span></div>
+                      <div className="item"><span className="label">{getClient1Label()} RMD Age:</span><span className="value">{rmdStartAge}</span></div>
+                      <div className="item"><span className="label">{getClient2Label()} RMD Age:</span><span className="value">{rmdStartAge2}</span></div>
+                    </>
+                  )}
+                  <div className="item"><span className="label">Projection End Age:</span><span className="value">{endAge}</span></div>
+                </div>
+
+                <div className="print-summary-box">
+                  <h3>Account Balances</h3>
+                  {clientType === 'single' ? (
+                    <div className="item"><span className="label">Traditional Balance:</span><span className="value">{formatCurrency(currentBalance)}</span></div>
+                  ) : (
+                    <>
+                      <div className="item"><span className="label">{getClient1Label()}'s Traditional:</span><span className="value">{formatCurrency(currentBalance)}</span></div>
+                      <div className="item"><span className="label">{getClient2Label()}'s Traditional:</span><span className="value">{formatCurrency(currentBalance2)}</span></div>
+                      <div className="item"><span className="label">Combined Total:</span><span className="value" style={{ color: '#D4AF37' }}>{formatCurrency(totalTraditionalBalance)}</span></div>
+                    </>
+                  )}
+                </div>
+
+                <div className="print-summary-box">
+                  <h3>Strategy Settings</h3>
+                  <div className="item"><span className="label">Annual Pre-RMD Withdrawal:</span><span className="value">{formatCurrency(standardPreRMD)}</span></div>
+                  <div className="item"><span className="label">Annual Roth Conversion:</span><span className="value">{formatCurrency(standardRothConv)}</span></div>
+                  <div className="item"><span className="label">Return Mode:</span><span className="value">{returnMode === 'fixed' ? `Fixed ${rateOfReturn}%` : returnMode === 'monte_carlo' ? 'Monte Carlo' : 'Simulated'}</span></div>
+                  <div className="item"><span className="label">Delay First RMD:</span><span className="value">{delayFirstRMD ? 'Yes' : 'No'}</span></div>
+                </div>
+
+                <div className="print-summary-box">
+                  <h3>Tax Assumptions</h3>
+                  <div className="item"><span className="label">Federal Tax Rate:</span><span className="value">{fedTaxRate}%</span></div>
+                  <div className="item"><span className="label">State Tax Rate:</span><span className="value">{stateTaxRate}%</span></div>
+                  <div className="item"><span className="label">Combined Rate:</span><span className="value">{fedTaxRate + stateTaxRate}%</span></div>
+                </div>
+              </div>
+
+              <div className="print-kpi-grid">
+                <div className="print-kpi-box">
+                  <div className="label">End Traditional</div>
+                  <div className="value">{formatCurrency(breakdown.trad)}</div>
+                </div>
+                <div className="print-kpi-box">
+                  <div className="label">End Roth</div>
+                  <div className="value">{formatCurrency(breakdown.roth)}</div>
+                </div>
+                <div className="print-kpi-box">
+                  <div className="label">First RMD</div>
+                  <div className="value">{firstRMD ? formatCurrency(firstRMD.withdrawal) : '-'}</div>
+                </div>
+                <div className="print-kpi-box" style={{ backgroundColor: '#00205B', border: 'none' }}>
+                  <div className="label" style={{ color: '#D4AF37' }}>Total Wealth</div>
+                  <div className="value" style={{ color: 'white' }}>{formatCurrency(finalTotalBalance)}</div>
+                </div>
+              </div>
+
+              <div className="print-summary-grid">
+                <div className="print-summary-box">
+                  <h3>Lifetime Tax Comparison</h3>
+                  <div className="item"><span className="label">Your Strategy Taxes:</span><span className="value">{formatCurrency(comparisonStats.taxesStrategy)}</span></div>
+                  <div className="item"><span className="label">Baseline (No Action):</span><span className="value">{formatCurrency(comparisonStats.taxesBaseline)}</span></div>
+                  <div className="item" style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #e5e7eb' }}>
+                    <span className="label" style={{ fontWeight: 600 }}>Net Tax Impact:</span>
+                    <span className="value" style={{ color: taxDifference >= 0 ? '#16a34a' : '#dc2626' }}>{taxDifference >= 0 ? 'Savings: ' : 'Extra: '}{formatCurrency(Math.abs(taxDifference))}</span>
+                  </div>
+                </div>
+
+                <div className="print-summary-box">
+                  <h3>Lifetime RMD Comparison</h3>
+                  <div className="item"><span className="label">Your Strategy RMDs:</span><span className="value">{formatCurrency(comparisonStats.rmdStrategy)}</span></div>
+                  <div className="item"><span className="label">Baseline (No Action):</span><span className="value">{formatCurrency(comparisonStats.rmdBaseline)}</span></div>
+                  <div className="item" style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #e5e7eb' }}>
+                    <span className="label" style={{ fontWeight: 600 }}>RMD Reduction:</span>
+                    <span className="value" style={{ color: rmdDifference >= 0 ? '#16a34a' : '#dc2626' }}>{formatCurrency(Math.abs(rmdDifference))}</span>
+                  </div>
+                </div>
+              </div>
+            </div >
+
+            {/* Pages 2+: Year by Year Detail */}
+            {
+              (() => {
+                const rowsPerPage = 28;
+                const pages = [];
+                for (let i = 0; i < displayData.length; i += rowsPerPage) {
+                  pages.push(displayData.slice(i, i + rowsPerPage));
+                }
+                return pages.map((pageData, pageIndex) => (
+                  <div key={pageIndex} className="print-page">
+                    <h2 className="print-page-title">
+                      Year-by-Year Projection {returnMode === 'monte_carlo' && '(Median)'} — Page {pageIndex + 1} of {pages.length}
+                    </h2>
+                    <table className="print-table">
+                      <thead>
+                        <tr>
+                          <th style={{ textAlign: 'center' }}>Age</th>
+                          <th style={{ textAlign: 'center' }}>Year</th>
+                          <th style={{ textAlign: 'center' }}>RMD Factor</th>
+                          <th>Trad Balance</th>
+                          <th>Roth Balance</th>
+                          <th style={{ textAlign: 'center' }}>Return</th>
+                          <th>Withdrawal</th>
+                          <th>Conversion</th>
+                          <th>Tax Paid</th>
+                          <th>Total Balance</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pageData.map((row) => (
+                          <tr key={row.age} className={row.isRMD ? 'rmd-row' : ''}>
+                            <td style={{ textAlign: 'center', fontWeight: 600 }}>{row.age}{row.isRMD && row.age === rmdStartAge ? ' ★' : ''}</td>
+                            <td style={{ textAlign: 'center' }}>{row.year}</td>
+                            <td style={{ textAlign: 'center' }}>{row.rmdFactor || '-'}</td>
+                            <td>{formatCurrency(row.tradStartBalance)}</td>
+                            <td>{formatCurrency(row.rothStartBalance)}</td>
+                            <td style={{ textAlign: 'center', color: row.rate < 0 ? '#dc2626' : '#16a34a' }}>{formatPercent(row.rate)}</td>
+                            <td>{row.withdrawal > 0 ? formatCurrency(row.withdrawal) : '-'}</td>
+                            <td>{row.conversion > 0 ? formatCurrency(row.conversion) : '-'}</td>
+                            <td>{row.taxPaid > 0 ? formatCurrency(row.taxPaid) : '-'}</td>
+                            <td style={{ fontWeight: 600 }}>{formatCurrency(row.totalEndBalance)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {pageIndex === pages.length - 1 && (
+                      <div style={{ marginTop: '15px', fontSize: '9pt', color: '#6b7280', textAlign: 'center' }}>
+                        ★ Indicates first RMD year | Yellow highlighted rows indicate RMD years
+                      </div>
+                    )}
+                  </div>
+                ));
+              })()
+            }
+          </div >
+        </div >
+      );
+    };
+
+    // Initialize GlobalStateManager for cross-tool communication
+    if (typeof GlobalStateManager !== 'undefined') {
+      GlobalStateManager.init();
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+
+</html>

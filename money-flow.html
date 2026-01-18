@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Money Flow Builder</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --brand-navy: #00205B;
+            --brand-navy-light: #003380;
+            --brand-gold: #D4AF37;
+            --brand-gold-hover: #B5952F;
+            --brand-light: #F9F9F7;
+            --brand-white: #FFFFFF;
+            --text-primary: #1a1a2e;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+            --border: #E2E8F0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --purple: #8b5cf6;
+            --cyan: #06b6d4;
+            --pink: #ec4899;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--brand-light);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1900px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 4px solid var(--brand-gold);
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--brand-navy);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .header-btn {
+            padding: 8px 14px;
+            background: var(--brand-white);
+            border: 2px solid var(--brand-navy);
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--brand-navy);
+        }
+
+        .header-btn:hover {
+            background: var(--brand-navy);
+            color: white;
+        }
+
+        .header-btn.primary {
+            background: var(--brand-gold);
+            border-color: var(--brand-gold);
+        }
+
+        .header-btn.primary:hover {
+            background: var(--brand-gold-hover);
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr 280px;
+            gap: 16px;
+            height: calc(100vh - 130px);
+        }
+
+        .sidebar {
+            background: var(--brand-white);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            background: var(--brand-navy);
+            padding: 12px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-header h2 {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--brand-white);
+        }
+
+        .sidebar-body {
+            padding: 12px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* Scenario Templates Section */
+        .scenario-section {
+            margin-bottom: 16px;
+        }
+
+        .scenario-btn {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, var(--brand-navy), var(--brand-navy-light));
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .scenario-btn:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 32, 91, 0.3);
+        }
+
+        .scenario-btn .icon {
+            font-size: 16px;
+        }
+
+        .scenario-btn .text {
+            flex: 1;
+        }
+
+        .scenario-btn .arrow {
+            opacity: 0.6;
+        }
+
+        .palette-section {
+            margin-bottom: 14px;
+        }
+
+        .palette-section-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .palette-section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .draggable-node {
+            padding: 7px 10px;
+            border-radius: 6px;
+            cursor: grab;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .draggable-node:hover {
+            transform: translateX(3px);
+        }
+
+        .draggable-node:active {
+            cursor: grabbing;
+        }
+
+        .draggable-node .node-icon {
+            font-size: 14px;
+        }
+
+        /* Node type colors - expanded palette */
+        .node-income {
+            background: #dcfce7;
+            border-color: var(--success);
+            color: #166534;
+        }
+
+        .node-account {
+            background: #dbeafe;
+            border-color: #3b82f6;
+            color: #1e40af;
+        }
+
+        .node-retirement {
+            background: #e0e7ff;
+            border-color: #6366f1;
+            color: #3730a3;
+        }
+
+        .node-entity {
+            background: #fef3c7;
+            border-color: var(--warning);
+            color: #92400e;
+        }
+
+        .node-person {
+            background: #fce7f3;
+            border-color: var(--pink);
+            color: #9d174d;
+        }
+
+        .node-destination {
+            background: #fee2e2;
+            border-color: var(--danger);
+            color: #991b1b;
+        }
+
+        .node-process {
+            background: #cffafe;
+            border-color: var(--cyan);
+            color: #0e7490;
+        }
+
+        .node-insurance {
+            background: #ede9fe;
+            border-color: var(--purple);
+            color: #5b21b6;
+        }
+
+        .canvas-area {
+            background: var(--brand-white);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .canvas-toolbar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            gap: 6px;
+            z-index: 100;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-btn {
+            padding: 6px 10px;
+            background: var(--brand-white);
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toolbar-btn:hover {
+            border-color: var(--brand-gold);
+        }
+
+        .toolbar-btn.active {
+            background: var(--brand-navy);
+            color: white;
+            border-color: var(--brand-navy);
+        }
+
+        .canvas-title {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--brand-navy);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 100;
+        }
+
+        .canvas {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        #flowCanvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Flow nodes on canvas */
+        .flow-node {
+            position: absolute;
+            min-width: 100px;
+            max-width: 150px;
+            border-radius: 8px;
+            padding: 10px 12px;
+            cursor: move;
+            user-select: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.2s;
+            text-align: center;
+        }
+
+        .flow-node:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .flow-node.selected {
+            box-shadow: 0 0 0 3px var(--brand-gold);
+        }
+
+        .flow-node .node-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .flow-node .node-title {
+            font-size: 10px;
+            font-weight: 700;
+            margin-bottom: 2px;
+            line-height: 1.2;
+        }
+
+        .flow-node .node-amount {
+            font-size: 12px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .flow-node .node-subtitle {
+            font-size: 8px;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        .flow-node.income {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .flow-node.account {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+
+        .flow-node.retirement {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+        }
+
+        .flow-node.entity {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+
+        .flow-node.person {
+            background: linear-gradient(135deg, #ec4899, #db2777);
+            color: white;
+        }
+
+        .flow-node.destination {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .flow-node.process {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+        }
+
+        .flow-node.insurance {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+        }
+
+        .flow-node.connect-mode {
+            cursor: crosshair;
+        }
+
+        .flow-node.connect-source {
+            box-shadow: 0 0 0 3px var(--brand-gold), 0 4px 16px rgba(0, 0, 0, 0.2);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        /* Properties panel */
+        .properties-panel .form-group {
+            margin-bottom: 10px;
+        }
+
+        .properties-panel label {
+            display: block;
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+        }
+
+        .properties-panel input,
+        .properties-panel select,
+        .properties-panel textarea {
+            width: 100%;
+            padding: 7px 9px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            font-size: 11px;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .properties-panel input[type="number"] {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .properties-panel input:focus,
+        .properties-panel select:focus,
+        .properties-panel textarea:focus {
+            outline: none;
+            border-color: var(--brand-gold);
+        }
+
+        .properties-panel textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .summary-card {
+            background: var(--brand-light);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .summary-value {
+            font-size: 12px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--brand-navy);
+        }
+
+        .flow-legend {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            padding: 8px;
+            background: var(--brand-light);
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 9px;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 40px;
+        }
+
+        .empty-state h3 {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 12px;
+            max-width: 300px;
+            line-height: 1.5;
+        }
+
+        .btn-delete {
+            width: 100%;
+            padding: 8px;
+            background: #fef2f2;
+            border: 2px solid var(--danger);
+            color: var(--danger);
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 11px;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #fef3c7;
+            border-color: var(--warning);
+            color: #92400e;
+        }
+
+        .canvas-instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(0, 32, 91, 0.95);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 10px;
+            z-index: 100;
+        }
+
+        .canvas-instructions strong {
+            color: var(--brand-gold);
+        }
+
+        /* Connection labels */
+        .connection-label {
+            position: absolute;
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        @media (max-width: 1400px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .canvas-area {
+                height: 600px;
+            }
+
+            .sidebar {
+                max-height: 400px;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+            }
+
+            .sidebar,
+            .canvas-toolbar,
+            .canvas-instructions,
+            .header-row {
+                display: none !important;
+            }
+
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .canvas-area {
+                height: auto;
+                min-height: 600px;
+                border: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>💸 Money Flow Builder</h1>
+            <p class="subtitle">Visualize money movements • Account transfers • Estate planning • Retirement
+                contributions</p>
+            <div class="header-row">
+                <button class="header-btn" onclick="saveToFile()">💾 Save</button>
+                <button class="header-btn" onclick="document.getElementById('loadFile').click()">📂 Load</button>
+                <input type="file" id="loadFile" accept=".json" style="display:none" onchange="loadFromFile(event)">
+                <button class="header-btn primary" onclick="exportPDF()">📄 Export PDF</button>
+                <button class="header-btn" onclick="window.print()">🖨️ Print</button>
+            </div>
+            <!-- Client Info Card -->
+            <div class="client-info-card"
+                style="margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; background: rgba(0, 32, 91, 0.05); padding: 10px 16px; border-radius: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 11px; font-weight: 600; color: var(--brand-navy);">Client Type:</span>
+                    <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 11px;">
+                        <input type="radio" name="clientType" value="single" checked onchange="updateClientDisplay()"
+                            style="accent-color: var(--brand-navy);"> Single
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 11px;">
+                        <input type="radio" name="clientType" value="joint" onchange="updateClientDisplay()"
+                            style="accent-color: var(--brand-navy);"> Joint
+                    </label>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="text" id="clientName1" placeholder="Client Name" oninput="updateClientDisplay()"
+                        style="padding: 6px 10px; border: 2px solid var(--border); border-radius: 6px; font-size: 11px; width: 140px;">
+                    <input type="text" id="clientName2" placeholder="Spouse Name" oninput="updateClientDisplay()"
+                        style="padding: 6px 10px; border: 2px solid var(--border); border-radius: 6px; font-size: 11px; width: 140px; display: none;">
+                </div>
+                <div id="clientDisplayName" style="font-size: 12px; font-weight: 600; color: var(--brand-navy);"></div>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <!-- LEFT SIDEBAR - Scenarios & Node Palette -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h2>Quick Start Templates</h2>
+                </div>
+                <div class="sidebar-body">
+                    <div class="scenario-section">
+                        <button class="scenario-btn" onclick="loadScenario('backdoor-roth')">
+                            <span class="icon">🚪</span>
+                            <span class="text">Backdoor Roth IRA</span>
+                            <span class="arrow">→</span>
+                        </button>
+                        <button class="scenario-btn" onclick="loadScenario('mega-backdoor')">
+                            <span class="icon">💪</span>
+                            <span class="text">Mega Backdoor Roth</span>
+                            <span class="arrow">→</span>
+                        </button>
+                        <button class="scenario-btn" onclick="loadScenario('401k-max')">
+                            <span class="icon">🎯</span>
+                            <span class="text">Max 401(k) Strategy</span>
+                            <span class="arrow">→</span>
+                        </button>
+                        <button class="scenario-btn" onclick="loadScenario('estate-trust')">
+                            <span class="icon">🏛️</span>
+                            <span class="text">Estate → Trust → Heirs</span>
+                            <span class="arrow">→</span>
+                        </button>
+                        <button class="scenario-btn" onclick="loadScenario('ilit')">
+                            <span class="icon">🛡️</span>
+                            <span class="text">ILIT Life Insurance</span>
+                            <span class="arrow">→</span>
+                        </button>
+                        <button class="scenario-btn" onclick="loadScenario('income-flow')">
+                            <span class="icon">💰</span>
+                            <span class="text">Income Distribution</span>
+                            <span class="arrow">→</span>
+                        </button>
+                        <button class="scenario-btn" onclick="loadScenario('heloc-arbitrage')">
+                            <span class="icon">🏠</span>
+                            <span class="text">HELOC → Investment</span>
+                            <span class="arrow">→</span>
+                        </button>
+                        <button class="scenario-btn" onclick="loadScenario('roth-conversion')">
+                            <span class="icon">🔄</span>
+                            <span class="text">Roth Conversion Ladder</span>
+                            <span class="arrow">→</span>
+                        </button>
+                    </div>
+
+                    <div class="palette-section">
+                        <div class="palette-section-title">Income Sources</div>
+                        <div class="draggable-node node-income" draggable="true" data-type="income"
+                            data-subtype="salary"><span class="node-icon">💼</span> W-2 Salary</div>
+                        <div class="draggable-node node-income" draggable="true" data-type="income"
+                            data-subtype="business"><span class="node-icon">🏢</span> Business Income</div>
+                        <div class="draggable-node node-income" draggable="true" data-type="income" data-subtype="ss">
+                            <span class="node-icon">🏛️</span> Social Security
+                        </div>
+                        <div class="draggable-node node-income" draggable="true" data-type="income"
+                            data-subtype="pension"><span class="node-icon">📋</span> Pension</div>
+                        <div class="draggable-node node-income" draggable="true" data-type="income"
+                            data-subtype="rental"><span class="node-icon">🏘️</span> Rental Income</div>
+                        <div class="draggable-node node-income" draggable="true" data-type="income"
+                            data-subtype="dividend"><span class="node-icon">📈</span> Dividends/Interest</div>
+                        <div class="draggable-node node-income" draggable="true" data-type="income"
+                            data-subtype="inheritance"><span class="node-icon">📜</span> Inheritance</div>
+                    </div>
+
+                    <div class="palette-section">
+                        <div class="palette-section-title">Bank & Brokerage</div>
+                        <div class="draggable-node node-account" draggable="true" data-type="account"
+                            data-subtype="checking"><span class="node-icon">🏦</span> Checking</div>
+                        <div class="draggable-node node-account" draggable="true" data-type="account"
+                            data-subtype="savings"><span class="node-icon">💰</span> Savings</div>
+                        <div class="draggable-node node-account" draggable="true" data-type="account"
+                            data-subtype="brokerage"><span class="node-icon">📊</span> Brokerage</div>
+                        <div class="draggable-node node-account" draggable="true" data-type="account"
+                            data-subtype="heloc"><span class="node-icon">🏠</span> HELOC</div>
+                        <div class="draggable-node node-account" draggable="true" data-type="account"
+                            data-subtype="loc"><span class="node-icon">💳</span> Line of Credit</div>
+                    </div>
+
+                    <div class="palette-section">
+                        <div class="palette-section-title">Retirement Accounts</div>
+                        <div class="draggable-node node-retirement" draggable="true" data-type="retirement"
+                            data-subtype="401k-pretax"><span class="node-icon">🔵</span> 401(k) Pre-Tax</div>
+                        <div class="draggable-node node-retirement" draggable="true" data-type="retirement"
+                            data-subtype="401k-roth"><span class="node-icon">🟢</span> 401(k) Roth</div>
+                        <div class="draggable-node node-retirement" draggable="true" data-type="retirement"
+                            data-subtype="401k-aftertax"><span class="node-icon">🟡</span> 401(k) After-Tax</div>
+                        <div class="draggable-node node-retirement" draggable="true" data-type="retirement"
+                            data-subtype="trad-ira"><span class="node-icon">📘</span> Traditional IRA</div>
+                        <div class="draggable-node node-retirement" draggable="true" data-type="retirement"
+                            data-subtype="roth-ira"><span class="node-icon">📗</span> Roth IRA</div>
+                        <div class="draggable-node node-retirement" draggable="true" data-type="retirement"
+                            data-subtype="sep-ira"><span class="node-icon">📙</span> SEP IRA</div>
+                        <div class="draggable-node node-retirement" draggable="true" data-type="retirement"
+                            data-subtype="hsa"><span class="node-icon">🏥</span> HSA</div>
+                    </div>
+
+                    <div class="palette-section">
+                        <div class="palette-section-title">Entities & Trusts</div>
+                        <div class="draggable-node node-entity" draggable="true" data-type="entity"
+                            data-subtype="rev-trust"><span class="node-icon">📋</span> Revocable Trust</div>
+                        <div class="draggable-node node-entity" draggable="true" data-type="entity"
+                            data-subtype="irrev-trust"><span class="node-icon">🔒</span> Irrevocable Trust</div>
+                        <div class="draggable-node node-entity" draggable="true" data-type="entity" data-subtype="ilit">
+                            <span class="node-icon">🛡️</span> ILIT
+                        </div>
+                        <div class="draggable-node node-entity" draggable="true" data-type="entity" data-subtype="llc">
+                            <span class="node-icon">🏛️</span> LLC
+                        </div>
+                        <div class="draggable-node node-entity" draggable="true" data-type="entity" data-subtype="corp">
+                            <span class="node-icon">🏢</span> Corporation
+                        </div>
+                        <div class="draggable-node node-entity" draggable="true" data-type="entity"
+                            data-subtype="foundation"><span class="node-icon">❤️</span> Foundation</div>
+                        <div class="draggable-node node-entity" draggable="true" data-type="entity" data-subtype="daf">
+                            <span class="node-icon">🎁</span> Donor Advised Fund
+                        </div>
+                    </div>
+
+                    <div class="palette-section">
+                        <div class="palette-section-title">People</div>
+                        <div class="draggable-node node-person" draggable="true" data-type="person"
+                            data-subtype="grantor"><span class="node-icon">👤</span> Grantor</div>
+                        <div class="draggable-node node-person" draggable="true" data-type="person"
+                            data-subtype="spouse"><span class="node-icon">👫</span> Spouse</div>
+                        <div class="draggable-node node-person" draggable="true" data-type="person"
+                            data-subtype="beneficiary"><span class="node-icon">👨‍👩‍👧</span> Beneficiary</div>
+                        <div class="draggable-node node-person" draggable="true" data-type="person"
+                            data-subtype="child"><span class="node-icon">👧</span> Child</div>
+                        <div class="draggable-node node-person" draggable="true" data-type="person"
+                            data-subtype="employer"><span class="node-icon">🏢</span> Employer</div>
+                    </div>
+
+                    <div class="palette-section">
+                        <div class="palette-section-title">Processes & Conversions</div>
+                        <div class="draggable-node node-process" draggable="true" data-type="process"
+                            data-subtype="roth-conv"><span class="node-icon">🔄</span> Roth Conversion</div>
+                        <div class="draggable-node node-process" draggable="true" data-type="process"
+                            data-subtype="rollover"><span class="node-icon">➡️</span> Rollover</div>
+                        <div class="draggable-node node-process" draggable="true" data-type="process"
+                            data-subtype="in-plan-conv"><span class="node-icon">🔃</span> In-Plan Conversion</div>
+                        <div class="draggable-node node-process" draggable="true" data-type="process"
+                            data-subtype="distribution"><span class="node-icon">📤</span> Distribution</div>
+                        <div class="draggable-node node-process" draggable="true" data-type="process"
+                            data-subtype="contribution"><span class="node-icon">📥</span> Contribution</div>
+                    </div>
+
+                    <div class="palette-section">
+                        <div class="palette-section-title">Insurance & Destinations</div>
+                        <div class="draggable-node node-insurance" draggable="true" data-type="insurance"
+                            data-subtype="life-ins"><span class="node-icon">🛡️</span> Life Insurance</div>
+                        <div class="draggable-node node-insurance" draggable="true" data-type="insurance"
+                            data-subtype="annuity"><span class="node-icon">📅</span> Annuity</div>
+                        <div class="draggable-node node-destination" draggable="true" data-type="destination"
+                            data-subtype="irs"><span class="node-icon">🏛️</span> IRS / Taxes</div>
+                        <div class="draggable-node node-destination" draggable="true" data-type="destination"
+                            data-subtype="expenses"><span class="node-icon">🏠</span> Living Expenses</div>
+                        <div class="draggable-node node-destination" draggable="true" data-type="destination"
+                            data-subtype="charity"><span class="node-icon">❤️</span> Charity</div>
+                        <div class="draggable-node node-destination" draggable="true" data-type="destination"
+                            data-subtype="vendor"><span class="node-icon">🏪</span> Vendor/Payee</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CENTER - Canvas -->
+            <div class="canvas-area">
+                <div class="canvas-toolbar">
+                    <button class="toolbar-btn" id="connectModeBtn" onclick="toggleConnectMode()">🔗 Connect</button>
+                    <button class="toolbar-btn" onclick="autoLayout()">📐 Layout</button>
+                    <button class="toolbar-btn" onclick="clearCanvas()">🗑️ Clear</button>
+                    <div
+                        style="display:flex;align-items:center;gap:6px;margin-left:16px;padding-left:16px;border-left:1px solid var(--border);">
+                        <span style="font-size:11px;color:var(--text-muted);">Zoom:</span>
+                        <input type="range" id="zoomSlider" min="50" max="150" value="100"
+                            style="width:80px;accent-color:var(--brand-navy);cursor:pointer;"
+                            oninput="updateZoom(this.value)">
+                        <span id="zoomValue"
+                            style="font-size:11px;color:var(--text-secondary);min-width:32px;">100%</span>
+                    </div>
+                </div>
+                <div class="canvas-title" id="canvasTitle">Custom Flow</div>
+                <div class="canvas" id="canvas">
+                    <svg id="connectionsSvg"
+                        style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;"></svg>
+                    <div id="labelsContainer"
+                        style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:50;">
+                    </div>
+                    <div id="nodesContainer" style="position:relative;z-index:2;"></div>
+                    <div class="empty-state" id="emptyState">
+                        <h3>Build Your Money Flow</h3>
+                        <p>Choose a template from the left, or drag components onto the canvas. Use "Connect" to draw
+                            arrows between nodes.</p>
+                    </div>
+                </div>
+                <div class="canvas-instructions" id="instructions">
+                    <strong>Quick start:</strong> Pick a template OR drag items from left → Click "Connect" → Click
+                    source, then target to draw arrows
+                </div>
+            </div>
+
+            <!-- RIGHT SIDEBAR - Properties & Summary -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h2>Properties</h2>
+                </div>
+                <div class="sidebar-body">
+                    <div id="propertiesPanel" class="properties-panel">
+                        <div style="color:var(--text-muted);font-size:11px;text-align:center;padding:20px;">
+                            Select a node to edit its properties
+                        </div>
+                    </div>
+
+                    <div style="margin-top:14px;">
+                        <div class="palette-section-title" style="margin-bottom:8px;">Flow Summary</div>
+                        <div class="summary-card">
+                            <div class="summary-row">
+                                <span class="summary-label">Total Inflows</span>
+                                <span class="summary-value" id="totalInflows" style="color:var(--success);">$0</span>
+                            </div>
+                            <div class="summary-row">
+                                <span class="summary-label">Total Outflows</span>
+                                <span class="summary-value" id="totalOutflows" style="color:var(--danger);">$0</span>
+                            </div>
+                            <div class="summary-row">
+                                <span class="summary-label">Nodes</span>
+                                <span class="summary-value" id="nodeCount">0</span>
+                            </div>
+                            <div class="summary-row">
+                                <span class="summary-label">Connections</span>
+                                <span class="summary-value" id="connectionCount">0</span>
+                            </div>
+                        </div>
+
+                        <div class="flow-legend">
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background:var(--success);"></div> Income
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background:#3b82f6;"></div> Account
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background:#6366f1;"></div> Retirement
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background:var(--warning);"></div> Entity
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background:var(--pink);"></div> Person
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background:var(--cyan);"></div> Process
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background:var(--purple);"></div> Insurance
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background:var(--danger);"></div> Destination
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============== CONFIGURATION ==============
+        const fC = n => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n || 0);
+
+        const nodeConfig = {
+            income: {
+                salary: { title: 'W-2 Salary', icon: '💼' },
+                business: { title: 'Business Income', icon: '🏢' },
+                ss: { title: 'Social Security', icon: '🏛️' },
+                pension: { title: 'Pension', icon: '📋' },
+                rental: { title: 'Rental Income', icon: '🏘️' },
+                dividend: { title: 'Dividends/Interest', icon: '📈' },
+                inheritance: { title: 'Inheritance', icon: '📜' }
+            },
+            account: {
+                checking: { title: 'Checking', icon: '🏦' },
+                savings: { title: 'Savings', icon: '💰' },
+                brokerage: { title: 'Brokerage', icon: '📊' },
+                heloc: { title: 'HELOC', icon: '🏠' },
+                loc: { title: 'Line of Credit', icon: '💳' }
+            },
+            retirement: {
+                '401k-pretax': { title: '401(k) Pre-Tax', icon: '🔵' },
+                '401k-roth': { title: '401(k) Roth', icon: '🟢' },
+                '401k-aftertax': { title: '401(k) After-Tax', icon: '🟡' },
+                'trad-ira': { title: 'Traditional IRA', icon: '📘' },
+                'roth-ira': { title: 'Roth IRA', icon: '📗' },
+                'sep-ira': { title: 'SEP IRA', icon: '📙' },
+                'hsa': { title: 'HSA', icon: '🏥' }
+            },
+            entity: {
+                'rev-trust': { title: 'Revocable Trust', icon: '📋' },
+                'irrev-trust': { title: 'Irrevocable Trust', icon: '🔒' },
+                'ilit': { title: 'ILIT', icon: '🛡️' },
+                'llc': { title: 'LLC', icon: '🏛️' },
+                'corp': { title: 'Corporation', icon: '🏢' },
+                'foundation': { title: 'Foundation', icon: '❤️' },
+                'daf': { title: 'Donor Advised Fund', icon: '🎁' }
+            },
+            person: {
+                grantor: { title: 'Grantor', icon: '👤' },
+                spouse: { title: 'Spouse', icon: '👫' },
+                beneficiary: { title: 'Beneficiary', icon: '👨‍👩‍👧' },
+                child: { title: 'Child', icon: '👧' },
+                employer: { title: 'Employer', icon: '🏢' }
+            },
+            process: {
+                'roth-conv': { title: 'Roth Conversion', icon: '🔄' },
+                'rollover': { title: 'Rollover', icon: '➡️' },
+                'in-plan-conv': { title: 'In-Plan Conversion', icon: '🔃' },
+                'distribution': { title: 'Distribution', icon: '📤' },
+                'contribution': { title: 'Contribution', icon: '📥' }
+            },
+            insurance: {
+                'life-ins': { title: 'Life Insurance', icon: '🛡️' },
+                'annuity': { title: 'Annuity', icon: '📅' }
+            },
+            destination: {
+                irs: { title: 'IRS / Taxes', icon: '🏛️' },
+                expenses: { title: 'Living Expenses', icon: '🏠' },
+                charity: { title: 'Charity', icon: '❤️' },
+                vendor: { title: 'Vendor/Payee', icon: '🏪' }
+            }
+        };
+
+        const typeColors = {
+            income: '#10b981',
+            account: '#3b82f6',
+            retirement: '#6366f1',
+            entity: '#f59e0b',
+            person: '#ec4899',
+            process: '#06b6d4',
+            insurance: '#8b5cf6',
+            destination: '#ef4444'
+        };
+
+        // ============== STATE ==============
+        let nodes = [];
+        let connections = [];
+        let selectedNode = null;
+        let nodeIdCounter = 0;
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        let connectMode = false;
+        let connectSource = null;
+        let currentScenario = 'Custom Flow';
+
+        // ============== CLIENT NAME HANDLING ==============
+        function updateClientDisplay() {
+            const isJoint = document.querySelector('input[name="clientType"]:checked').value === 'joint';
+            const name1Input = document.getElementById('clientName1');
+            const name2Input = document.getElementById('clientName2');
+            const displayEl = document.getElementById('clientDisplayName');
+
+            // Show/hide spouse name input based on selection
+            name2Input.style.display = isJoint ? 'block' : 'none';
+
+            // Update display text
+            const name1 = name1Input.value.trim();
+            const name2 = name2Input.value.trim();
+
+            if (name1 && isJoint && name2) {
+                displayEl.textContent = name1 + ' & ' + name2;
+            } else if (name1) {
+                displayEl.textContent = name1;
+            } else {
+                displayEl.textContent = '';
+            }
+        }
+
+        function getClientName() {
+            const isJoint = document.querySelector('input[name="clientType"]:checked').value === 'joint';
+            const name1 = document.getElementById('clientName1').value.trim();
+            const name2 = document.getElementById('clientName2').value.trim();
+
+            if (name1 && isJoint && name2) {
+                return name1 + ' & ' + name2;
+            } else if (name1) {
+                return name1;
+            }
+            return '';
+        }
+
+        // ============== ZOOM CONTROL ==============
+        let currentZoom = 100;
+
+        function updateZoom(value) {
+            currentZoom = parseInt(value);
+            document.getElementById('zoomValue').textContent = currentZoom + '%';
+
+            const canvas = document.getElementById('canvas');
+            const scale = currentZoom / 100;
+
+            // Apply transform to the canvas content
+            canvas.style.transform = `scale(${scale})`;
+            canvas.style.transformOrigin = 'top left';
+
+            // Adjust canvas container size to compensate
+            const wrapper = canvas.parentElement;
+            if (wrapper) {
+                canvas.style.width = (100 / scale) + '%';
+                canvas.style.height = (100 / scale) + '%';
+            }
+        }
+
+        // ============== SCENARIO TEMPLATES ==============
+        const scenarios = {
+            'backdoor-roth': {
+                title: 'Backdoor Roth IRA',
+                nodes: [
+                    { type: 'account', subtype: 'brokerage', x: 50, y: 150, amount: 7500, title: 'Taxable Account' },
+                    { type: 'retirement', subtype: 'trad-ira', x: 250, y: 150, amount: 7500, title: 'Traditional IRA', subtitle: 'Non-deductible' },
+                    { type: 'process', subtype: 'roth-conv', x: 450, y: 150, amount: 7500, title: 'Roth Conversion' },
+                    { type: 'retirement', subtype: 'roth-ira', x: 650, y: 150, amount: 7500, title: 'Roth IRA' }
+                ],
+                connections: [[0, 1], [1, 2], [2, 3]]
+            },
+            'mega-backdoor': {
+                title: 'Mega Backdoor Roth (415c Max)',
+                nodes: [
+                    { type: 'person', subtype: 'employer', x: 50, y: 80, amount: 0, title: 'Employer' },
+                    { type: 'income', subtype: 'salary', x: 50, y: 200, amount: 250000, title: 'W-2 Salary' },
+                    { type: 'retirement', subtype: '401k-pretax', x: 280, y: 50, amount: 24500, title: '401(k) Pre-Tax', subtitle: 'Employee Deferral' },
+                    { type: 'retirement', subtype: '401k-roth', x: 280, y: 150, amount: 0, title: '401(k) Roth', subtitle: 'Employee Deferral' },
+                    { type: 'retirement', subtype: '401k-aftertax', x: 280, y: 250, amount: 24500, title: '401(k) After-Tax', subtitle: 'Mega Backdoor' },
+                    { type: 'retirement', subtype: '401k-pretax', x: 280, y: 350, amount: 23000, title: 'Employer Match', subtitle: 'Pre-Tax' },
+                    { type: 'process', subtype: 'in-plan-conv', x: 500, y: 250, amount: 24500, title: 'In-Plan Roth Conv.' },
+                    { type: 'retirement', subtype: 'roth-ira', x: 700, y: 250, amount: 24500, title: 'Roth IRA', subtitle: 'Tax-Free Growth' },
+                    { type: 'destination', subtype: 'irs', x: 500, y: 400, amount: 0, title: 'Taxes Due', subtitle: 'On Gains Only' }
+                ],
+                connections: [[1, 2], [1, 3], [1, 4], [0, 5], [4, 6], [6, 7], [6, 8]]
+            },
+            '401k-max': {
+                title: '401(k) Contribution Buckets (2026)',
+                nodes: [
+                    { type: 'income', subtype: 'salary', x: 50, y: 180, amount: 200000, title: 'W-2 Salary' },
+                    { type: 'person', subtype: 'employer', x: 50, y: 320, amount: 0, title: 'Employer' },
+                    { type: 'retirement', subtype: '401k-pretax', x: 300, y: 80, amount: 24500, title: 'Pre-Tax 401(k)', subtitle: '402(g) Limit' },
+                    { type: 'retirement', subtype: '401k-roth', x: 300, y: 180, amount: 0, title: 'Roth 401(k)', subtitle: 'Combined w/ Pre-Tax' },
+                    { type: 'retirement', subtype: '401k-aftertax', x: 300, y: 280, amount: 24500, title: 'After-Tax 401(k)', subtitle: 'Mega Backdoor' },
+                    { type: 'retirement', subtype: '401k-pretax', x: 300, y: 380, amount: 23000, title: 'Employer Match', subtitle: 'Always Pre-Tax' },
+                    { type: 'account', subtype: 'brokerage', x: 550, y: 230, amount: 72000, title: 'Total: $72,000', subtitle: '415(c) Limit 2026' }
+                ],
+                connections: [[0, 2], [0, 3], [0, 4], [1, 5], [2, 6], [3, 6], [4, 6], [5, 6]]
+            },
+            'estate-trust': {
+                title: 'Estate → Revocable Trust → Heirs',
+                nodes: [
+                    { type: 'person', subtype: 'grantor', x: 50, y: 180, amount: 5000000, title: 'Grantor (Decedent)' },
+                    { type: 'entity', subtype: 'rev-trust', x: 280, y: 180, amount: 5000000, title: 'Revocable Trust', subtitle: 'Becomes Irrevocable' },
+                    { type: 'person', subtype: 'beneficiary', x: 520, y: 80, amount: 2500000, title: 'Spouse', subtitle: 'Unlimited Marital' },
+                    { type: 'person', subtype: 'child', x: 520, y: 180, amount: 1250000, title: 'Child 1' },
+                    { type: 'person', subtype: 'child', x: 520, y: 280, amount: 1250000, title: 'Child 2' },
+                    { type: 'destination', subtype: 'irs', x: 520, y: 380, amount: 0, title: 'Estate Tax', subtitle: 'If over exemption' }
+                ],
+                connections: [[0, 1], [1, 2], [1, 3], [1, 4], [1, 5]]
+            },
+            'ilit': {
+                title: 'ILIT Life Insurance Strategy',
+                nodes: [
+                    { type: 'person', subtype: 'grantor', x: 50, y: 180, amount: 50000, title: 'Grantor', subtitle: 'Annual Gifts' },
+                    { type: 'entity', subtype: 'ilit', x: 280, y: 180, amount: 50000, title: 'ILIT', subtitle: 'Irrevocable Trust' },
+                    { type: 'insurance', subtype: 'life-ins', x: 500, y: 180, amount: 5000000, title: 'Life Insurance', subtitle: 'Policy Owned by ILIT' },
+                    { type: 'person', subtype: 'beneficiary', x: 720, y: 100, amount: 2500000, title: 'Beneficiary 1' },
+                    { type: 'person', subtype: 'beneficiary', x: 720, y: 260, amount: 2500000, title: 'Beneficiary 2' },
+                    { type: 'destination', subtype: 'irs', x: 280, y: 350, amount: 0, title: 'Estate Tax', subtitle: 'AVOIDED' }
+                ],
+                connections: [[0, 1], [1, 2], [2, 3], [2, 4]]
+            },
+            'income-flow': {
+                title: 'Income Distribution Flow',
+                nodes: [
+                    { type: 'income', subtype: 'salary', x: 50, y: 100, amount: 150000, title: 'W-2 Salary' },
+                    { type: 'income', subtype: 'rental', x: 50, y: 200, amount: 24000, title: 'Rental Income' },
+                    { type: 'income', subtype: 'dividend', x: 50, y: 300, amount: 12000, title: 'Dividends' },
+                    { type: 'account', subtype: 'checking', x: 280, y: 180, amount: 186000, title: 'Checking Account' },
+                    { type: 'retirement', subtype: '401k-pretax', x: 500, y: 50, amount: 24500, title: '401(k)' },
+                    { type: 'destination', subtype: 'irs', x: 500, y: 150, amount: 42000, title: 'Taxes' },
+                    { type: 'destination', subtype: 'expenses', x: 500, y: 250, amount: 84000, title: 'Living Expenses' },
+                    { type: 'account', subtype: 'savings', x: 500, y: 350, amount: 35500, title: 'Savings' }
+                ],
+                connections: [[0, 3], [1, 3], [2, 3], [0, 4], [3, 5], [3, 6], [3, 7]]
+            },
+            'heloc-arbitrage': {
+                title: 'HELOC → Investment Strategy',
+                nodes: [
+                    { type: 'account', subtype: 'heloc', x: 50, y: 180, amount: 100000, title: 'HELOC', subtitle: '7% Interest' },
+                    { type: 'account', subtype: 'checking', x: 280, y: 180, amount: 100000, title: 'Checking', subtitle: 'Pass-through' },
+                    { type: 'account', subtype: 'brokerage', x: 500, y: 100, amount: 100000, title: 'Brokerage', subtitle: 'Index Funds' },
+                    { type: 'destination', subtype: 'vendor', x: 500, y: 260, amount: 7000, title: 'Interest Payments', subtitle: 'Annual' },
+                    { type: 'income', subtype: 'dividend', x: 720, y: 100, amount: 10000, title: 'Expected Return', subtitle: '10% avg' }
+                ],
+                connections: [[0, 1], [1, 2], [1, 3], [2, 4]]
+            },
+            'roth-conversion': {
+                title: 'Roth Conversion Ladder',
+                nodes: [
+                    { type: 'retirement', subtype: '401k-pretax', x: 50, y: 180, amount: 1000000, title: '401(k) / Trad IRA', subtitle: 'Pre-Tax Balance' },
+                    { type: 'process', subtype: 'rollover', x: 250, y: 180, amount: 1000000, title: 'Rollover to IRA' },
+                    { type: 'retirement', subtype: 'trad-ira', x: 430, y: 180, amount: 1000000, title: 'Traditional IRA' },
+                    { type: 'process', subtype: 'roth-conv', x: 610, y: 100, amount: 50000, title: 'Annual Conversion', subtitle: 'To top of 22% bracket' },
+                    { type: 'retirement', subtype: 'roth-ira', x: 790, y: 100, amount: 50000, title: 'Roth IRA', subtitle: 'Tax-Free Growth' },
+                    { type: 'destination', subtype: 'irs', x: 610, y: 280, amount: 11000, title: 'Taxes Due', subtitle: 'On Conversion' }
+                ],
+                connections: [[0, 1], [1, 2], [2, 3], [3, 4], [3, 5]]
+            }
+        };
+
+        // ============== INITIALIZATION ==============
+        document.querySelectorAll('.draggable-node').forEach(node => {
+            node.addEventListener('dragstart', handleDragStart);
+        });
+
+        const canvas = document.getElementById('canvas');
+        canvas.addEventListener('dragover', e => e.preventDefault());
+        canvas.addEventListener('drop', handleDrop);
+
+        // ============== DRAG & DROP ==============
+        function handleDragStart(e) {
+            e.dataTransfer.setData('type', e.target.dataset.type);
+            e.dataTransfer.setData('subtype', e.target.dataset.subtype);
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const type = e.dataTransfer.getData('type');
+            const subtype = e.dataTransfer.getData('subtype');
+            if (!type || !subtype) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left - 60;
+            const y = e.clientY - rect.top - 30;
+            createNode(type, subtype, x, y);
+            setScenarioTitle('Custom Flow');
+        }
+
+        // ============== NODE MANAGEMENT ==============
+        function createNode(type, subtype, x, y, amount = 0, customTitle = null, customSubtitle = null) {
+            const config = nodeConfig[type]?.[subtype] || { title: subtype, icon: '📦' };
+            const node = {
+                id: 'node-' + (++nodeIdCounter),
+                type,
+                subtype,
+                title: customTitle || config.title,
+                subtitle: customSubtitle || '',
+                icon: config.icon,
+                amount: amount,
+                x: Math.max(10, Math.min(x, 750)),
+                y: Math.max(50, Math.min(y, 450))
+            };
+            nodes.push(node);
+            renderNode(node);
+            updateEmptyState();
+            selectNode(node.id);
+            updateSummary();
+            return node;
+        }
+
+        function renderNode(node) {
+            const container = document.getElementById('nodesContainer');
+            const el = document.createElement('div');
+            el.id = node.id;
+            el.className = 'flow-node ' + node.type + (connectMode ? ' connect-mode' : '');
+            el.style.left = node.x + 'px';
+            el.style.top = node.y + 'px';
+            el.innerHTML = `
+                <div class="node-icon">${node.icon}</div>
+                <div class="node-title">${node.title}</div>
+                ${node.amount > 0 ? `<div class="node-amount">${fC(node.amount)}</div>` : ''}
+                ${node.subtitle ? `<div class="node-subtitle">${node.subtitle}</div>` : ''}
+            `;
+
+            el.addEventListener('mousedown', (e) => {
+                if (connectMode) {
+                    handleConnectClick(node);
+                } else {
+                    startDrag(e, node);
+                }
+            });
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (!connectMode) selectNode(node.id);
+            });
+
+            container.appendChild(el);
+        }
+
+        function updateNodeDisplay(node) {
+            const el = document.getElementById(node.id);
+            if (!el) return;
+            el.innerHTML = `
+                <div class="node-icon">${node.icon}</div>
+                <div class="node-title">${node.title}</div>
+                ${node.amount > 0 ? `<div class="node-amount">${fC(node.amount)}</div>` : ''}
+                ${node.subtitle ? `<div class="node-subtitle">${node.subtitle}</div>` : ''}
+            `;
+        }
+
+        // ============== CONNECTION MODE ==============
+        function toggleConnectMode() {
+            connectMode = !connectMode;
+            connectSource = null;
+
+            const btn = document.getElementById('connectModeBtn');
+            btn.classList.toggle('active', connectMode);
+            btn.textContent = connectMode ? '✓ Connecting...' : '🔗 Connect';
+
+            document.querySelectorAll('.flow-node').forEach(el => {
+                el.classList.toggle('connect-mode', connectMode);
+                el.classList.remove('connect-source');
+            });
+
+            document.getElementById('instructions').innerHTML = connectMode
+                ? '<strong>Connect Mode:</strong> Click a source node, then click a target node to create an arrow. Click "Connect" again to exit.'
+                : '<strong>Quick start:</strong> Pick a template OR drag items from left → Click "Connect" → Click source, then target to draw arrows';
+        }
+
+        function handleConnectClick(node) {
+            if (!connectSource) {
+                connectSource = node;
+                document.getElementById(node.id).classList.add('connect-source');
+            } else {
+                if (node.id !== connectSource.id) {
+                    const exists = connections.some(c => c.from === connectSource.id && c.to === node.id);
+                    if (!exists) {
+                        connections.push({ from: connectSource.id, to: node.id, label: '' });
+                        renderConnections();
+                        updateSummary();
+                    }
+                }
+                document.querySelectorAll('.flow-node').forEach(el => el.classList.remove('connect-source'));
+                connectSource = null;
+            }
+        }
+
+        // ============== DRAG NODES ==============
+        function startDrag(e, node) {
+            if (connectMode) return;
+            isDragging = true;
+            selectedNode = node;
+            const el = document.getElementById(node.id);
+            dragOffset.x = e.clientX - el.offsetLeft;
+            dragOffset.y = e.clientY - el.offsetTop;
+
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', stopDrag);
+        }
+
+        function onDrag(e) {
+            if (!isDragging || !selectedNode) return;
+            const el = document.getElementById(selectedNode.id);
+            const canvasEl = document.getElementById('canvas');
+            const rect = canvasEl.getBoundingClientRect();
+
+            selectedNode.x = Math.max(0, Math.min(e.clientX - dragOffset.x, rect.width - 120));
+            selectedNode.y = Math.max(0, Math.min(e.clientY - dragOffset.y, rect.height - 60));
+
+            el.style.left = selectedNode.x + 'px';
+            el.style.top = selectedNode.y + 'px';
+
+            renderConnections();
+        }
+
+        function stopDrag() {
+            isDragging = false;
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('mouseup', stopDrag);
+        }
+
+        // ============== SELECTION & PROPERTIES ==============
+        function selectNode(nodeId) {
+            document.querySelectorAll('.flow-node').forEach(n => n.classList.remove('selected'));
+            if (nodeId) {
+                const el = document.getElementById(nodeId);
+                if (el) el.classList.add('selected');
+            }
+
+            const node = nodes.find(n => n.id === nodeId);
+            selectedNode = node;
+            renderProperties(node);
+        }
+
+        function renderProperties(node) {
+            if (!node) {
+                document.getElementById('propertiesPanel').innerHTML = '<div style="color:var(--text-muted);font-size:11px;text-align:center;padding:20px;">Select a node to edit its properties</div>';
+                return;
+            }
+
+            document.getElementById('propertiesPanel').innerHTML = `
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="propTitle" value="${node.title}" onchange="updateProp('title', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Subtitle / Note</label>
+                    <input type="text" id="propSubtitle" value="${node.subtitle || ''}" onchange="updateProp('subtitle', this.value)" placeholder="Optional note">
+                </div>
+                <div class="form-group">
+                    <label>Amount ($)</label>
+                    <input type="number" id="propAmount" value="${node.amount}" onchange="updateProp('amount', parseFloat(this.value) || 0)">
+                </div>
+                <button class="btn-delete" onclick="deleteNode('${node.id}')">🗑️ Delete Node</button>
+                <button class="btn-delete btn-secondary" onclick="deleteConnectionsFor('${node.id}')">🔗 Remove Arrows</button>
+            `;
+        }
+
+        function updateProp(prop, value) {
+            if (!selectedNode) return;
+            selectedNode[prop] = value;
+            updateNodeDisplay(selectedNode);
+            updateSummary();
+        }
+
+        function deleteNode(nodeId) {
+            nodes = nodes.filter(n => n.id !== nodeId);
+            connections = connections.filter(c => c.from !== nodeId && c.to !== nodeId);
+            const el = document.getElementById(nodeId);
+            if (el) el.remove();
+            selectedNode = null;
+            renderProperties(null);
+            renderConnections();
+            updateEmptyState();
+            updateSummary();
+        }
+
+        function deleteConnectionsFor(nodeId) {
+            connections = connections.filter(c => c.from !== nodeId && c.to !== nodeId);
+            renderConnections();
+            updateSummary();
+        }
+
+        // ============== RENDER CONNECTIONS ==============
+        function renderConnections() {
+            const svg = document.getElementById('connectionsSvg');
+            const labels = document.getElementById('labelsContainer');
+
+            // Create arrow markers for each type
+            let defs = '<defs>';
+            Object.entries(typeColors).forEach(([type, color]) => {
+                defs += `<marker id="arrow-${type}" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="${color}"/></marker>`;
+            });
+            defs += '</defs>';
+            svg.innerHTML = defs;
+            labels.innerHTML = '';
+
+            connections.forEach(conn => {
+                const fromEl = document.getElementById(conn.from);
+                const toEl = document.getElementById(conn.to);
+                if (!fromEl || !toEl) return;
+
+                const fromNode = nodes.find(n => n.id === conn.from);
+                const color = typeColors[fromNode?.type] || '#888';
+
+                const x1 = fromEl.offsetLeft + fromEl.offsetWidth;
+                const y1 = fromEl.offsetTop + fromEl.offsetHeight / 2;
+                const x2 = toEl.offsetLeft;
+                const y2 = toEl.offsetTop + toEl.offsetHeight / 2;
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const midX = (x1 + x2) / 2;
+                path.setAttribute('d', `M${x1},${y1} C${midX},${y1} ${midX},${y2} ${x2},${y2}`);
+                path.setAttribute('stroke', color);
+                path.setAttribute('stroke-width', '3');
+                path.setAttribute('fill', 'none');
+                path.setAttribute('marker-end', `url(#arrow-${fromNode?.type || 'income'})`);
+                svg.appendChild(path);
+
+                // Label removed as per user request
+            });
+        }
+
+        // ============== UTILITIES ==============
+        function updateSummary() {
+            let inflows = 0, outflows = 0;
+            nodes.forEach(n => {
+                if (n.type === 'income') inflows += n.amount;
+                if (n.type === 'destination') outflows += n.amount;
+            });
+
+            document.getElementById('totalInflows').textContent = fC(inflows);
+            document.getElementById('totalOutflows').textContent = fC(outflows);
+            document.getElementById('nodeCount').textContent = nodes.length;
+            document.getElementById('connectionCount').textContent = connections.length;
+        }
+
+        function updateEmptyState() {
+            document.getElementById('emptyState').style.display = nodes.length === 0 ? 'flex' : 'none';
+        }
+
+        function setScenarioTitle(title) {
+            currentScenario = title;
+            document.getElementById('canvasTitle').textContent = title;
+        }
+
+        function clearCanvas() {
+            if (nodes.length > 0 && !confirm('Clear all nodes and connections?')) return;
+            nodes = [];
+            connections = [];
+            nodeIdCounter = 0;
+            document.getElementById('nodesContainer').innerHTML = '';
+            document.getElementById('labelsContainer').innerHTML = '';
+            renderConnections();
+            selectedNode = null;
+            connectSource = null;
+            renderProperties(null);
+            updateEmptyState();
+            updateSummary();
+            setScenarioTitle('Custom Flow');
+
+            if (connectMode) {
+                connectMode = false;
+                const btn = document.getElementById('connectModeBtn');
+                btn.classList.remove('active');
+                btn.textContent = '🔗 Connect';
+            }
+        }
+
+        function autoLayout() {
+            const groups = {};
+            nodes.forEach(n => {
+                if (!groups[n.type]) groups[n.type] = [];
+                groups[n.type].push(n);
+            });
+
+            const typeOrder = ['income', 'person', 'account', 'process', 'retirement', 'entity', 'insurance', 'destination'];
+            let col = 0;
+
+            typeOrder.forEach(type => {
+                if (groups[type] && groups[type].length > 0) {
+                    groups[type].forEach((node, i) => {
+                        node.x = 30 + col * 180;
+                        node.y = 60 + i * 90;
+                        const el = document.getElementById(node.id);
+                        if (el) {
+                            el.style.left = node.x + 'px';
+                            el.style.top = node.y + 'px';
+                        }
+                    });
+                    col++;
+                }
+            });
+
+            renderConnections();
+        }
+
+        // ============== SCENARIO LOADING ==============
+        function loadScenario(scenarioId) {
+            if (nodes.length > 0 && !confirm('This will replace your current diagram. Continue?')) return;
+
+            clearCanvas();
+
+            const scenario = scenarios[scenarioId];
+            if (!scenario) return;
+
+            setScenarioTitle(scenario.title);
+
+            const createdNodes = [];
+            scenario.nodes.forEach(n => {
+                const node = createNode(n.type, n.subtype, n.x, n.y, n.amount, n.title, n.subtitle);
+                createdNodes.push(node);
+            });
+
+            scenario.connections.forEach(([fromIdx, toIdx]) => {
+                if (createdNodes[fromIdx] && createdNodes[toIdx]) {
+                    connections.push({ from: createdNodes[fromIdx].id, to: createdNodes[toIdx].id });
+                }
+            });
+
+            renderConnections();
+            updateSummary();
+            selectNode(null);
+            renderProperties(null);
+        }
+
+        // ============== SAVE / LOAD ==============
+        function saveToFile() {
+            const state = {
+                version: 1,
+                title: currentScenario,
+                savedAt: new Date().toISOString(),
+                nodes: nodes,
+                connections: connections,
+                nodeIdCounter: nodeIdCounter
+            };
+
+            const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'money-flow-' + currentScenario.replace(/\s+/g, '-').toLowerCase() + '.json';
+            a.click();
+        }
+
+        function loadFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const state = JSON.parse(e.target.result);
+
+                    clearCanvas();
+
+                    setScenarioTitle(state.title || 'Loaded Flow');
+                    nodeIdCounter = state.nodeIdCounter || 0;
+
+                    state.nodes.forEach(n => {
+                        nodes.push(n);
+                        renderNode(n);
+                    });
+
+                    connections = state.connections || [];
+                    renderConnections();
+                    updateEmptyState();
+                    updateSummary();
+
+                } catch (err) {
+                    alert('Error loading file: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // ============== PDF EXPORT ==============
+        async function exportPDF() {
+            if (nodes.length === 0) {
+                alert('Add some nodes before exporting.');
+                return;
+            }
+
+            try {
+                // Get canvas element
+                const canvasElement = document.getElementById('canvas');
+
+                // Capture the canvas as an image
+                const screenshot = await html2canvas(canvasElement, {
+                    backgroundColor: '#ffffff',
+                    scale: 2, // Higher quality
+                    useCORS: true
+                });
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('landscape', 'pt', 'letter');
+                const pw = doc.internal.pageSize.getWidth();
+                const ph = doc.internal.pageSize.getHeight();
+
+                const navy = [0, 32, 91];
+                const gold = [212, 175, 55];
+                const white = [255, 255, 255];
+
+                // Get client name
+                const clientName = getClientName();
+
+                // Header
+                doc.setFillColor(...navy);
+                doc.rect(0, 0, pw, 65, 'F');
+                doc.setFillColor(...gold);
+                doc.rect(0, 65, pw, 4, 'F');
+
+                // Title - changed to "Flow Chart Prepared for:"
+                doc.setTextColor(...white);
+                doc.setFontSize(20);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Flow Chart Prepared for:', 40, 28);
+
+                // Client name below title
+                if (clientName) {
+                    doc.setFontSize(16);
+                    doc.setTextColor(...gold);
+                    doc.text(clientName, 40, 50);
+                } else {
+                    doc.setFontSize(12);
+                    doc.setTextColor(...gold);
+                    doc.text('[Enter client name above]', 40, 50);
+                }
+
+                // Scenario name and date on right
+                doc.setTextColor(...white);
+                doc.setFontSize(14);
+                doc.text(currentScenario, pw - 40, 28, { align: 'right' });
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.text(new Date().toLocaleDateString(), pw - 40, 45, { align: 'right' });
+
+                // Add the canvas screenshot as image
+                const imgData = screenshot.toDataURL('image/png');
+                const imgWidth = pw - 80;
+                const imgHeight = (screenshot.height / screenshot.width) * imgWidth;
+
+                // Calculate max height available
+                const maxHeight = ph - 130; // Leave room for header and footer
+                const finalHeight = Math.min(imgHeight, maxHeight);
+                const finalWidth = (finalHeight === maxHeight) ? (screenshot.width / screenshot.height) * finalHeight : imgWidth;
+
+                // Center the image horizontally
+                const xPos = (pw - finalWidth) / 2;
+
+                doc.addImage(imgData, 'PNG', xPos, 80, finalWidth, finalHeight);
+
+                // Footer
+                doc.setFillColor(...navy);
+                doc.rect(0, ph - 25, pw, 25, 'F');
+                doc.setTextColor(...gold);
+                doc.setFontSize(9);
+                doc.text('Confidential', pw / 2, ph - 9, { align: 'center' });
+
+                doc.save('FlowChart-' + (clientName || currentScenario).replace(/\s+/g, '-') + '.pdf');
+
+            } catch (err) {
+                console.error('PDF Error:', err);
+                alert('Error generating PDF: ' + err.message);
+            }
+        }
+
+        // ============== CANVAS CLICK ==============
+        canvas.addEventListener('click', (e) => {
+            if (e.target === canvas || e.target.id === 'nodesContainer' || e.target.id === 'labelsContainer') {
+                if (!connectMode) {
+                    document.querySelectorAll('.flow-node').forEach(n => n.classList.remove('selected'));
+                    selectedNode = null;
+                    renderProperties(null);
+                }
+            }
+        });
+
+        // Initialize
+        updateEmptyState();
+    </script>
+</body>
+
+</html>

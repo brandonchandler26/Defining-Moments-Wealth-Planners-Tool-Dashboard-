@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Planning Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Shared Dashboard Libraries -->
+    <script src="tools/constants.js"></script>
+    <script src="tools/state-manager.js"></script>
+    <style>
+        :root {
+            --brand-navy: #00205B;
+            --brand-navy-light: #003380;
+            --brand-navy-dark: #001a4d;
+            --brand-gold: #D4AF37;
+            --brand-gold-hover: #B5952F;
+            --brand-light: #F9F9F7;
+            --brand-white: #FFFFFF;
+            --text-primary: #1a1a2e;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+            --border: #E2E8F0;
+            --sidebar-width: 280px;
+            --sidebar-collapsed: 70px;
+            --header-height: 70px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--brand-light);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            background: var(--brand-navy);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--brand-white);
+        }
+
+        .header-logo {
+            width: 40px;
+            height: 40px;
+            background: var(--brand-gold);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--brand-navy);
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .header-subtitle {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 2px;
+        }
+
+        .header-center {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+
+        .current-tool-name {
+            color: var(--brand-gold);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-btn {
+            padding: 8px 16px;
+            border: 2px solid var(--brand-gold);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--brand-gold);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .header-btn:hover {
+            background: var(--brand-gold);
+            color: var(--brand-navy);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            bottom: 0;
+            width: var(--sidebar-width);
+            background: var(--brand-white);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease;
+            z-index: 900;
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed);
+        }
+
+        .sidebar-toggle {
+            position: absolute;
+            top: 12px;
+            right: -14px;
+            width: 28px;
+            height: 28px;
+            background: var(--brand-white);
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--brand-gold);
+            border-color: var(--brand-gold);
+        }
+
+        .sidebar-toggle svg {
+            width: 14px;
+            height: 14px;
+            transition: transform 0.3s;
+        }
+
+        .sidebar.collapsed .sidebar-toggle svg {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-section {
+            padding: 16px 12px 8px;
+        }
+
+        .sidebar-section-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            padding: 0 8px;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed .sidebar-section-title {
+            opacity: 0;
+        }
+
+        .nav-list {
+            list-style: none;
+            padding: 0 8px;
+        }
+
+        .nav-item {
+            margin-bottom: 4px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .nav-link:hover {
+            background: var(--brand-light);
+            color: var(--brand-navy);
+        }
+
+        .nav-link.active {
+            background: var(--brand-navy);
+            color: var(--brand-white);
+        }
+
+        .nav-link.active .nav-icon {
+            color: var(--brand-gold);
+        }
+
+        .nav-icon {
+            width: 22px;
+            height: 22px;
+            flex-shrink: 0;
+        }
+
+        .nav-text {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar.collapsed .nav-text {
+            opacity: 0;
+            width: 0;
+        }
+
+        .nav-badge {
+            padding: 2px 8px;
+            background: var(--brand-gold);
+            color: var(--brand-navy);
+            font-size: 10px;
+            font-weight: 700;
+            border-radius: 10px;
+        }
+
+        .sidebar.collapsed .nav-badge {
+            display: none;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .sidebar-footer-text {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .sidebar.collapsed .sidebar-footer-text {
+            display: none;
+        }
+
+        /* Main Content */
+        .main-content {
+            position: fixed;
+            top: var(--header-height);
+            left: var(--sidebar-width);
+            right: 0;
+            bottom: 0;
+            transition: left 0.3s ease;
+            background: var(--brand-light);
+        }
+
+        .sidebar.collapsed~.main-content {
+            left: var(--sidebar-collapsed);
+        }
+
+        .tool-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: var(--brand-white);
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .welcome-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--brand-navy);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .welcome-icon svg {
+            width: 40px;
+            height: 40px;
+            color: var(--brand-gold);
+        }
+
+        .welcome-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--brand-navy);
+            margin-bottom: 8px;
+        }
+
+        .welcome-subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            max-width: 500px;
+        }
+
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .tool-card {
+            background: var(--brand-white);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .tool-card:hover {
+            border-color: var(--brand-gold);
+            box-shadow: 0 4px 20px rgba(0, 32, 91, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .tool-card-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--brand-light);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .tool-card-icon svg {
+            width: 24px;
+            height: 24px;
+            color: var(--brand-navy);
+        }
+
+        .tool-card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--brand-navy);
+            margin-bottom: 8px;
+        }
+
+        .tool-card-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Profile Setup Section */
+        .profile-setup-section {
+            background: linear-gradient(135deg, var(--brand-navy) 0%, var(--brand-navy-light) 100%);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 32px;
+            max-width: 700px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0, 32, 91, 0.2);
+        }
+
+        .profile-setup-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .profile-setup-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--brand-gold);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .profile-setup-icon svg {
+            width: 28px;
+            height: 28px;
+            color: var(--brand-navy);
+        }
+
+        .profile-setup-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--brand-white);
+            margin-bottom: 4px;
+        }
+
+        .profile-setup-subtitle {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .profile-setup-text {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .profile-setup-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .profile-setup-btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .profile-setup-btn-primary {
+            background: var(--brand-gold);
+            border: 2px solid var(--brand-gold);
+            color: var(--brand-navy);
+        }
+
+        .profile-setup-btn-primary:hover {
+            background: var(--brand-gold-hover);
+            border-color: var(--brand-gold-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+        }
+
+        .profile-setup-btn-secondary {
+            background: transparent;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: var(--brand-white);
+        }
+
+        .profile-setup-btn-secondary:hover {
+            border-color: var(--brand-white);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .profile-setup-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .profile-active-section {
+            background: linear-gradient(135deg, #0d7a3b 0%, #15803d 100%);
+        }
+
+        .profile-active-section .profile-setup-icon {
+            background: var(--brand-white);
+        }
+
+        .profile-active-section .profile-setup-icon svg {
+            color: #15803d;
+        }
+
+        .header-profile-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .header-profile-status.guest {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header-profile-status.guest:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--brand-white);
+        }
+
+        .header-profile-status.active {
+            background: var(--brand-gold);
+            color: var(--brand-navy);
+        }
+
+        .header-profile-status.active:hover {
+            background: var(--brand-gold-hover);
+        }
+
+        .header-profile-status svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: var(--sidebar-collapsed);
+            }
+
+            .sidebar .nav-text,
+            .sidebar .sidebar-section-title,
+            .sidebar .nav-badge,
+            .sidebar .sidebar-footer-text {
+                display: none;
+            }
+
+            .main-content {
+                left: var(--sidebar-collapsed);
+            }
+
+            .header-subtitle {
+                display: none;
+            }
+
+            .profile-setup-section {
+                padding: 20px;
+            }
+
+            .profile-setup-actions {
+                flex-direction: column;
+            }
+
+            .profile-setup-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 32, 91, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--brand-white);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 85vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlide 0.3s ease;
+        }
+
+        @keyframes modalSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            background: var(--brand-navy);
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            color: var(--brand-white);
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-title svg {
+            color: var(--brand-gold);
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--brand-white);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-body {
+            padding: 24px;
+            max-height: calc(85vh - 140px);
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-btn-secondary {
+            background: var(--brand-light);
+            border: 2px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .modal-btn-secondary:hover {
+            border-color: var(--brand-gold);
+        }
+
+        .modal-btn-primary {
+            background: var(--brand-gold);
+            border: 2px solid var(--brand-gold);
+            color: var(--brand-navy);
+        }
+
+        .modal-btn-primary:hover {
+            background: var(--brand-gold-hover);
+            border-color: var(--brand-gold-hover);
+        }
+
+        .form-section {
+            margin-bottom: 24px;
+        }
+
+        .form-section-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--brand-navy);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--brand-gold);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 10px 12px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--brand-gold);
+        }
+
+        .header-greeting {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            margin-right: 16px;
+        }
+
+        .header-greeting strong {
+            color: var(--brand-gold);
+        }
+
+        .header-new-client-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: transparent;
+            border: 2px solid var(--brand-gold);
+            color: var(--brand-gold);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 12px;
+        }
+
+        .header-new-client-btn:hover {
+            background: var(--brand-gold);
+            color: var(--brand-navy);
+        }
+
+        .header-new-client-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-brand">
+            <div class="header-logo">DM</div>
+            <div>
+                <div class="header-title">Defining Moments</div>
+                <div class="header-subtitle">Wealth Planners</div>
+            </div>
+        </div>
+        <div class="header-center">
+            <span class="current-tool-name" id="currentToolName">Welcome</span>
+        </div>
+        <div class="header-actions">
+            <!-- Tools are now standalone - no shared profile needed -->
+        </div>
+    </header>
+
+    <aside class="sidebar" id="sidebar">
+        <button class="sidebar-toggle" onclick="toggleSidebar()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+        </button>
+
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">Planning Tools</div>
+            <ul class="nav-list">
+                <li class="nav-item">
+                    <a class="nav-link" onclick="loadTool('cashflow', 'Cash Flow Calculator')">
+                        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                        </svg>
+                        <span class="nav-text">Cash Flow Calculator</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="loadTool('tax', 'Effective Tax Calculator')">
+                        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V13.5zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V18zm2.498-6.75h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V13.5zm0 2.25h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V18zm2.504-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V18zm2.498-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zM8.25 6h7.5v2.25h-7.5V6zM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 002.25 2.25h10.5a2.25 2.25 0 002.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0012 2.25z" />
+                        </svg>
+                        <span class="nav-text">Effective Tax Calculator</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="loadTool('rmd-roth', 'RMD vs Roth Conversion')">
+                        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                        </svg>
+                        <span class="nav-text">RMD vs Roth Conversion</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="loadTool('money-flow', 'Money Flow Builder')">
+                        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                        </svg>
+                        <span class="nav-text">Money Flow Builder</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-footer-text">© 2026 Defining Moments Wealth Planners</div>
+        </div>
+    </aside>
+
+    <main class="main-content" id="mainContent">
+        <div class="welcome-screen" id="welcomeScreen">
+            <!-- Welcome Header -->
+            <div class="welcome-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                </svg>
+            </div>
+
+            <h1 class="welcome-title">Financial Planning Dashboard</h1>
+            <p class="welcome-subtitle">Select a tool from the sidebar or choose one below to get started with your
+                comprehensive financial planning analysis.</p>
+            <div class="tool-grid">
+                <div class="tool-card" onclick="loadTool('cashflow', 'Cash Flow Calculator')">
+                    <div class="tool-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                        </svg>
+                    </div>
+                    <h3 class="tool-card-title">Cash Flow Calculator</h3>
+                    <p class="tool-card-desc">Monthly income, tax withholding, 401(k) contributions, and expense
+                        planning.</p>
+                </div>
+                <div class="tool-card" onclick="loadTool('tax', 'Effective Tax Calculator')">
+                    <div class="tool-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V13.5zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V18zm2.498-6.75h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V13.5zm0 2.25h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V18zm2.504-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V18zm2.498-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zM8.25 6h7.5v2.25h-7.5V6zM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 002.25 2.25h10.5a2.25 2.25 0 002.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0012 2.25z" />
+                        </svg>
+                    </div>
+                    <h3 class="tool-card-title">Effective Tax Calculator</h3>
+                    <p class="tool-card-desc">2026 comprehensive tax analysis with federal, state, AMT, and NIIT
+                        calculations.</p>
+                </div>
+                <div class="tool-card" onclick="loadTool('rmd-roth', 'RMD vs Roth Conversion')">
+                    <div class="tool-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                        </svg>
+                    </div>
+                    <h3 class="tool-card-title">RMD vs Roth Conversion</h3>
+                    <p class="tool-card-desc">Compare required minimum distributions against Roth conversion strategies.
+                    </p>
+                </div>
+                <div class="tool-card" onclick="loadTool('money-flow', 'Money Flow Builder')">
+                    <div class="tool-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                        </svg>
+                    </div>
+                    <h3 class="tool-card-title">Money Flow Builder</h3>
+                    <p class="tool-card-desc">Visualize income flows, account relationships, and money movement.</p>
+                </div>
+            </div>
+        </div>
+        <iframe class="tool-frame" id="toolFrame" style="display: none;"></iframe>
+    </main>
+
+    <script>
+        // =============================================
+        // STATE MANAGER - Using shared library
+        // =============================================
+        // Note: GlobalStateManager is loaded via script tag in head
+        // This ensures a single source of truth for state management
+        if (typeof GlobalStateManager !== 'undefined') {
+            GlobalStateManager.init();
+        } else {
+            console.warn('GlobalStateManager not loaded - state sync disabled');
+        }
+
+        // =============================================
+        // MAIN APPLICATION CODE
+        // =============================================
+        const tools = {
+            'cashflow': 'tools/cashflow-calculator.html',
+            'tax': 'tools/tax-calculator.html',
+            'rmd-roth': 'tools/rmd-roth-tool.html',
+            'money-flow': 'tools/money-flow.html'
+        };
+
+        let currentTool = null;
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        }
+
+        function loadTool(toolId, toolName) {
+            // Update active state
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            event?.target?.closest('.nav-link')?.classList.add('active');
+
+            // Update header
+            document.getElementById('currentToolName').textContent = toolName;
+
+            // Show iframe, hide welcome
+            document.getElementById('welcomeScreen').style.display = 'none';
+            const frame = document.getElementById('toolFrame');
+            frame.style.display = 'block';
+            frame.src = tools[toolId];
+
+            currentTool = toolId;
+
+            // Broadcast state to new tool
+            setTimeout(() => {
+                GlobalStateManager.broadcastState();
+            }, 500);
+
+            // Update nav active state if clicked from welcome screen
+            document.querySelectorAll('.nav-link').forEach(link => {
+                if (link.textContent.includes(toolName.split(' ')[0])) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        function updateHeaderGreeting() {
+            const state = GlobalStateManager.getState();
+            const profileStatus = document.getElementById('headerProfileStatus');
+            const profileText = document.getElementById('headerProfileText');
+            const profileSection = document.getElementById('profileSetupSection');
+
+            if (state.client1?.name) {
+                const names = [state.client1.name];
+                if (state.client2?.enabled && state.client2?.name) {
+                    names.push(state.client2.name);
+                }
+                profileText.textContent = names.join(' & ');
+                profileStatus.classList.remove('guest');
+                profileStatus.classList.add('active');
+
+                // Update the profile section to show active state
+                if (profileSection) {
+                    profileSection.classList.add('profile-active-section');
+                    document.getElementById('profileSetupTitle').textContent = 'Profile Active';
+                    document.getElementById('profileSetupSubtitle').textContent = names.join(' & ');
+                    document.getElementById('profileSetupText').textContent = 'Your profile is set up and being used across all planning tools. Click below to manage your income, assets, and liabilities.';
+                    document.getElementById('profileSetupActions').innerHTML = `
+                        <button class="profile-setup-btn profile-setup-btn-primary" onclick="loadTool('profile', 'Client Profile')">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                            </svg>
+                            Manage Profile
+                        </button>
+                        <button class="profile-setup-btn profile-setup-btn-secondary" onclick="saveAndStartNew()">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                            </svg>
+                            Save & Start New
+                        </button>
+                    `;
+                }
+            } else {
+                profileText.textContent = 'Guest Mode';
+                profileStatus.classList.add('guest');
+                profileStatus.classList.remove('active');
+
+                // Reset profile section to setup state
+                if (profileSection) {
+                    profileSection.classList.remove('profile-active-section');
+                    document.getElementById('profileSetupTitle').textContent = 'Get Started';
+                    document.getElementById('profileSetupSubtitle').textContent = 'Set up your client profile for personalized planning';
+                    document.getElementById('profileSetupText').textContent = 'Set up your client profile with income sources, assets, liabilities, and personal information. This comprehensive hub feeds data into all planning tools for personalized calculations.';
+
+                    // Check for recent profiles
+                    const recentProfiles = getProfileHistory();
+                    const recentProfilesHTML = recentProfiles.length > 0 ? `
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <label class="text-sm font-bold text-gray-600 mb-2 block">Recent Profiles (Last ${recentProfiles.length})</label>
+                            <select id="recentProfilesSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" onchange="if(this.value) loadFromProfileHistory(Number(this.value))">
+                                <option value="">Select a recent profile...</option>
+                                ${recentProfiles.map(p => {
+                        const date = new Date(p.savedAt).toLocaleDateString();
+                        const displayName = p.client2Name ? `${p.name} & ${p.client2Name}` : p.name;
+                        return `<option value="${p.id}">${displayName} (${date})</option>`;
+                    }).join('')}
+                            </select>
+                        </div>
+                    ` : '';
+
+                    document.getElementById('profileSetupActions').innerHTML = `
+                        <button class="profile-setup-btn profile-setup-btn-primary" onclick="loadTool('profile', 'Client Profile')">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            Create Profile
+                        </button>
+                        <button class="profile-setup-btn profile-setup-btn-secondary" onclick="continueAsGuest()">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                            </svg>
+                            Continue as Guest
+                        </button>
+                        ${recentProfilesHTML}
+                    `;
+                }
+            }
+        }
+
+        function continueAsGuest() {
+            // Simply scroll down to the tools or do nothing - they can start using tools immediately
+            document.querySelector('.tool-grid').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function clearProfile() {
+            if (confirm('Are you sure you want to clear your profile and switch to guest mode? Your saved data will be removed.')) {
+                GlobalStateManager.setState({
+                    client1: { name: '', dob: '1965-01-01', age: 60, retirementAge: 65, salary: 150000 },
+                    client2: { enabled: false, name: '', dob: '1967-01-01', age: 58, retirementAge: 65, salary: 80000 },
+                    filingStatus: 'mfj',
+                    state: 'MO',
+                    incomeSources: [],
+                    assets: [],
+                    liabilities: []
+                });
+                updateHeaderGreeting();
+                GlobalStateManager.broadcastState();
+            }
+        }
+
+        function saveAndStartNew() {
+            // Show confirmation modal instead of immediately acting
+            showSaveConfirmModal();
+        }
+
+        function showSaveConfirmModal() {
+            const state = GlobalStateManager.getState();
+            const clientName = state.client1?.name || 'Current Client';
+
+            // Create modal HTML with inline styles (Tailwind not available in index.html)
+            const modalHTML = `
+                <div id="saveConfirmModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)closeSaveConfirmModal()">
+                    <div style="background:white;border-radius:12px;box-shadow:0 25px 50px rgba(0,0,0,0.25);max-width:400px;width:100%;padding:24px;border-top:4px solid #d97706;">
+                        <div style="text-align:center;margin-bottom:16px;">
+                            <svg style="width:64px;height:64px;color:#d97706;margin:0 auto 12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <h3 style="font-size:20px;font-weight:700;color:#1f2937;margin-bottom:8px;">Start New Client?</h3>
+                            <p style="color:#6b7280;">Are you sure you want to clear <strong>${clientName}</strong>'s profile and start fresh?</p>
+                        </div>
+                        
+                        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:16px;">
+                            <p style="color:#1e40af;font-size:14px;"><strong>Tip:</strong> Click "Export Profile" below to save this client's data as a file before clearing.</p>
+                        </div>
+                        
+                        <div style="display:flex;flex-direction:column;gap:12px;">
+                            <button onclick="exportAndClearProfile()" style="width:100%;background:#16a34a;color:white;font-weight:700;padding:12px 16px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;">
+                                <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Export Profile & Start New
+                            </button>
+                            <button onclick="clearProfileWithoutExport()" style="width:100%;background:#ef4444;color:white;font-weight:700;padding:12px 16px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;">
+                                <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Clear Without Exporting
+                            </button>
+                            <button onclick="closeSaveConfirmModal()" style="width:100%;background:#e5e7eb;color:#374151;font-weight:700;padding:12px 16px;border-radius:8px;border:none;cursor:pointer;font-size:14px;">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+
+        function closeSaveConfirmModal() {
+            const modal = document.getElementById('saveConfirmModal');
+            if (modal) modal.remove();
+        }
+
+        function saveToProfileHistory() {
+            const state = GlobalStateManager.getState();
+            const clientName = state.client1?.name || 'Unnamed Client';
+
+            // Get existing history from localStorage
+            let history = [];
+            try {
+                const stored = localStorage.getItem('profileHistory');
+                if (stored) history = JSON.parse(stored);
+            } catch (e) {
+                history = [];
+            }
+
+            // Add current profile to history
+            const historyEntry = {
+                id: Date.now(),
+                name: clientName,
+                client2Name: state.client2?.name || '',
+                savedAt: new Date().toISOString(),
+                data: state
+            };
+
+            // Add to front of array, remove duplicates by client name, keep max 10
+            history = history.filter(h => h.name !== clientName);
+            history.unshift(historyEntry);
+            history = history.slice(0, 10);
+
+            // Save back to localStorage
+            localStorage.setItem('profileHistory', JSON.stringify(history));
+        }
+
+        function getProfileHistory() {
+            try {
+                const stored = localStorage.getItem('profileHistory');
+                return stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function loadFromProfileHistory(historyId) {
+            const history = getProfileHistory();
+            const entry = history.find(h => h.id === historyId);
+            if (entry && entry.data) {
+                GlobalStateManager.setState(entry.data);
+                updateHeaderGreeting();
+                GlobalStateManager.broadcastState();
+                showWelcome();
+            }
+        }
+
+        function exportAndClearProfile() {
+            const state = GlobalStateManager.getState();
+            const clientName = state.client1?.name || 'Client';
+
+            // Save to history before clearing
+            saveToProfileHistory();
+
+            // Create and download the JSON file
+            const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${clientName.replace(/[^a-zA-Z0-9]/g, '-')}-profile-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            // Clear profile
+            clearProfileData();
+            closeSaveConfirmModal();
+        }
+
+        function clearProfileWithoutExport() {
+            // Save to history before clearing (so user can recover)
+            saveToProfileHistory();
+            clearProfileData();
+            closeSaveConfirmModal();
+        }
+
+        function clearProfileData() {
+            // Use clearAll to properly remove localStorage and reset to defaults
+            GlobalStateManager.clearAll();
+
+            // Reload the page to ensure all tools get fresh state
+            // This is the most reliable way to clear all cached data
+            setTimeout(() => {
+                window.location.reload();
+            }, 100);
+        }
+
+        function showWelcome() {
+            document.getElementById('welcomeScreen').style.display = 'flex';
+            document.getElementById('toolFrame').style.display = 'none';
+            document.getElementById('currentToolName').textContent = 'Welcome';
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            currentTool = null;
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeProfileModal();
+            }
+        });
+
+        // Close modal on backdrop click
+        document.getElementById('profileModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeProfileModal();
+            }
+        });
+
+        // Listen for state changes from tools
+        window.addEventListener('message', function (e) {
+            if (e.data && e.data.type === 'STATE_UPDATE') {
+                updateHeaderGreeting();
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function () {
+            updateHeaderGreeting();
+        });
+    </script>
+</body>
+
+</html>

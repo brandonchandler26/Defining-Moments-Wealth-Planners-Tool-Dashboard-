@@ -1,0 +1,3045 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Flow Calculator</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <!-- Shared Dashboard Libraries -->
+    <script src="constants.js"></script>
+    <script src="state-manager.js"></script>
+    <style>
+        :root {
+            --brand-navy: #00205B;
+            --brand-navy-light: #003380;
+            --brand-gold: #D4AF37;
+            --brand-gold-hover: #B5952F;
+            --brand-light: #F9F9F7;
+            --brand-white: #FFFFFF;
+            --text-primary: #1a1a2e;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+            --border: #E2E8F0;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--brand-light);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--brand-light);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--brand-gold);
+            border-radius: 5px;
+        }
+
+        .container {
+            max-width: 1900px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 3px solid var(--brand-gold);
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--brand-navy);
+            margin-bottom: 4px;
+        }
+
+        .client-name-display {
+            font-size: 20px;
+            color: var(--brand-gold);
+            font-weight: 600;
+            margin-bottom: 8px;
+            min-height: 30px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border: 2px solid var(--brand-navy);
+            border-radius: 8px;
+            background: var(--brand-white);
+            color: var(--brand-navy);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--brand-navy);
+            color: var(--brand-white);
+        }
+
+        .action-btn.primary {
+            background: var(--brand-gold);
+            border-color: var(--brand-gold);
+            color: var(--brand-navy);
+        }
+
+        .action-btn.primary:hover {
+            background: var(--brand-gold-hover);
+        }
+
+        .action-btn.danger {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .action-btn.danger:hover {
+            background: var(--danger);
+            color: var(--brand-white);
+        }
+
+        .action-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 1400px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--brand-white);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 32, 91, 0.08);
+        }
+
+        .card-header {
+            background: var(--brand-navy);
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header h2 {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--brand-white);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-header .icon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--brand-gold);
+        }
+
+        .card-body {
+            padding: 18px;
+        }
+
+        .input-group {
+            margin-bottom: 14px;
+        }
+
+        .input-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--brand-navy);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .input-row .input-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        select {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            padding: 10px 12px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            background: var(--brand-white);
+            color: var(--text-primary);
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        input[type="text"] {
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--brand-gold);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+        }
+
+        .input-with-prefix {
+            position: relative;
+        }
+
+        .input-with-prefix .prefix {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            pointer-events: none;
+        }
+
+        .input-with-prefix input {
+            padding-left: 24px;
+        }
+
+        .input-with-suffix {
+            position: relative;
+        }
+
+        .input-with-suffix .suffix {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            pointer-events: none;
+        }
+
+        .input-with-suffix input {
+            padding-right: 32px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--brand-white);
+            padding: 4px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 2px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            background: var(--brand-navy);
+            color: var(--brand-white);
+        }
+
+        .tab:hover:not(.active) {
+            background: var(--brand-light);
+            color: var(--brand-navy);
+        }
+
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        .month-card {
+            background: var(--brand-white);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            min-width: 120px;
+        }
+
+        .month-header {
+            background: var(--brand-navy);
+            padding: 8px 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--brand-white);
+        }
+
+        .month-body {
+            padding: 10px;
+        }
+
+        .month-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            padding: 3px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .month-row:last-child {
+            border-bottom: none;
+        }
+
+        .month-row .label {
+            color: var(--text-muted);
+        }
+
+        .month-row .value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+        }
+
+        .month-row .value.positive {
+            color: var(--success);
+        }
+
+        .month-row .value.negative {
+            color: var(--danger);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .summary-card {
+            background: var(--brand-white);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .summary-card h3 {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--brand-navy);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--brand-gold);
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .summary-item.total {
+            border-top: 2px solid var(--brand-navy);
+            margin-top: 8px;
+            padding-top: 12px;
+            font-weight: 700;
+        }
+
+        .summary-item .label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .summary-item .value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .summary-item .value.green {
+            color: var(--success);
+        }
+
+        .summary-item .value.blue {
+            color: var(--brand-navy);
+        }
+
+        .summary-item .value.gold {
+            color: var(--brand-gold-hover);
+        }
+
+        .summary-item .value.red {
+            color: var(--danger);
+        }
+
+        .grand-total-card {
+            background: linear-gradient(135deg, var(--brand-navy), var(--brand-navy-light));
+            border: 3px solid var(--brand-gold);
+        }
+
+        .grand-total-card h3 {
+            color: var(--brand-gold);
+            border-bottom-color: var(--brand-gold);
+        }
+
+        .grand-total-card .summary-item .label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .grand-total-card .summary-item .value {
+            font-size: 18px;
+            color: var(--brand-white);
+        }
+
+        .grand-total-card .summary-item .value.green {
+            color: #4ade80;
+        }
+
+        .grand-total-card .summary-item .value.gold {
+            color: var(--brand-gold);
+        }
+
+        .grand-total-card .summary-item.total {
+            border-top-color: var(--brand-gold);
+        }
+
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        .detail-table th {
+            text-align: left;
+            padding: 12px 8px;
+            background: var(--brand-navy);
+            font-weight: 600;
+            color: var(--brand-white);
+            border-bottom: 2px solid var(--brand-gold);
+            white-space: nowrap;
+        }
+
+        .detail-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .detail-table tr:nth-child(even) td {
+            background: var(--brand-light);
+        }
+
+        .detail-table tr:hover td {
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .detail-table .number {
+            font-family: 'JetBrains Mono', monospace;
+            text-align: right;
+        }
+
+        .detail-table input[type="number"] {
+            padding: 4px 6px;
+            font-size: 11px;
+            border: 1px solid var(--border);
+        }
+
+        .income-source {
+            background: var(--brand-light);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .income-source-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .income-source-header h4 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--brand-navy);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .income-source-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .income-source-grid .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .small-btn {
+            padding: 6px 12px;
+            background: var(--brand-white);
+            border: 2px solid var(--brand-navy);
+            border-radius: 6px;
+            color: var(--brand-navy);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .small-btn:hover {
+            background: var(--brand-navy);
+            color: var(--brand-white);
+        }
+
+        .small-btn.danger {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .small-btn.danger:hover {
+            background: var(--danger);
+            color: var(--brand-white);
+        }
+
+        .small-btn.gold {
+            background: var(--brand-gold);
+            border-color: var(--brand-gold);
+            color: var(--brand-navy);
+        }
+
+        .small-btn.gold:hover {
+            background: var(--brand-gold-hover);
+        }
+
+        .add-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 14px;
+            background: var(--brand-white);
+            border: 2px dashed var(--brand-gold);
+            border-radius: 8px;
+            color: var(--brand-navy);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-btn:hover {
+            background: rgba(212, 175, 55, 0.1);
+            border-style: solid;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--brand-gold);
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge.fica {
+            background: rgba(0, 32, 91, 0.1);
+            color: var(--brand-navy);
+            border: 1px solid var(--brand-navy);
+        }
+
+        .badge.no-fica {
+            background: rgba(113, 128, 150, 0.1);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+
+        .savings-item {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .savings-item input[type="text"] {
+            flex: 1;
+        }
+
+        .savings-item .input-with-prefix {
+            width: 130px;
+            flex-shrink: 0;
+        }
+
+        .fica-info {
+            background: rgba(0, 32, 91, 0.05);
+            border: 1px solid var(--brand-navy);
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-top: 12px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .fica-info strong {
+            color: var(--brand-navy);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--brand-white);
+            border: 2px solid var(--brand-gold);
+            border-radius: 8px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 32px rgba(0, 32, 91, 0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast svg {
+            color: var(--success);
+        }
+
+        .toast span {
+            color: var(--brand-navy);
+            font-weight: 600;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .help-text {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Income Type Toggle Buttons */
+        .income-type-toggle {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 8px 10px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            background: var(--brand-white);
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .toggle-btn:hover {
+            border-color: var(--brand-gold);
+            color: var(--brand-navy);
+        }
+
+        .toggle-btn.active {
+            background: var(--brand-navy);
+            border-color: var(--brand-navy);
+            color: var(--brand-white);
+        }
+
+        /* Monthly Income Grid */
+        .monthly-income-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .monthly-income-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .monthly-income-item label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .monthly-income-item input {
+            padding: 8px 8px 8px 20px;
+            font-size: 12px;
+        }
+
+        .monthly-income-item .input-with-prefix .prefix {
+            left: 8px;
+            font-size: 12px;
+        }
+
+        @media (max-width: 600px) {
+            .monthly-income-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .variable-total {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: rgba(0, 32, 91, 0.05);
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .variable-total .label {
+            color: var(--text-secondary);
+        }
+
+        .variable-total .value {
+            color: var(--brand-navy);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* 401(k) Loan Section Styles */
+        .loan-section {
+            background: rgba(212, 175, 55, 0.1);
+            border: 2px solid var(--brand-gold);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .loan-section h5 {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--brand-navy);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .loan-section h5::before {
+            content: '💰';
+        }
+
+        .loan-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+        }
+
+        .loan-grid .loan-month {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .loan-grid .loan-month label {
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .loan-grid .loan-month input {
+            padding: 6px 6px 6px 16px;
+            font-size: 11px;
+        }
+
+        .loan-grid .loan-month .input-with-prefix .prefix {
+            left: 6px;
+            font-size: 11px;
+        }
+
+        .loan-total {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: var(--brand-white);
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .loan-total .label {
+            color: var(--text-secondary);
+        }
+
+        .loan-total .value {
+            color: var(--brand-gold-hover);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Section Divider */
+        .section-divider {
+            border-top: 2px dashed var(--border);
+            margin: 16px 0;
+            padding-top: 16px;
+        }
+
+        .section-divider h4 {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--brand-navy);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Cash Flow Calculator</h1>
+            <div class="client-name-display" id="clientNameDisplay"></div>
+            <p class="subtitle"><span id="headerInfo">Configure client information to begin</span></p>
+            <div class="header-actions">
+                <button class="action-btn" onclick="saveState()"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>Save</button>
+                <button class="action-btn" onclick="document.getElementById('fileInput').click()"><svg
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>Load</button>
+                <input type="file" id="fileInput" accept=".json" onchange="loadState(event)">
+                <button class="action-btn primary" onclick="exportPDF()"><svg xmlns="http://www.w3.org/2000/svg"
+                        fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>Export PDF</button>
+                <button class="action-btn danger" onclick="resetAll()"><svg xmlns="http://www.w3.org/2000/svg"
+                        fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>Reset</button>
+            </div>
+        </header>
+
+        <!-- Scenario Manager -->
+        <div class="scenario-manager"
+            style="background:var(--brand-light);padding:16px;border-radius:8px;margin-bottom:24px;border-top:4px solid var(--brand-gold);box-shadow:0 2px 8px rgba(0,32,91,0.1);">
+            <div
+                style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:12px;">
+                <h3
+                    style="font-size:11px;font-weight:700;color:var(--brand-navy);text-transform:uppercase;letter-spacing:1px;margin:0;">
+                    Scenario Manager</h3>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;">
+                <div style="display:flex;gap:8px;flex-grow:1;">
+                    <select id="scenarioDropdown"
+                        style="flex-grow:1;max-width:350px;padding:10px 12px;border:2px solid var(--border);border-radius:6px;font-size:13px;"
+                        onchange="loadSelectedScenario()">
+                        <option value="">Load Saved Scenario...</option>
+                    </select>
+                    <button class="action-btn" onclick="saveToLocalStorage()"><svg xmlns="http://www.w3.org/2000/svg"
+                            fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>Save</button>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button class="action-btn" onclick="exportScenarioJSON()"><svg xmlns="http://www.w3.org/2000/svg"
+                            fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>Export JSON</button>
+                    <label class="action-btn primary" style="cursor:pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>Import JSON
+                        <input type="file" accept=".json" style="display:none;" onchange="importScenarioJSON(event)">
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="grid-layout">
+            <aside class="sidebar">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><span class="icon"></span>Client Information</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-row">
+                            <div class="input-group"><label>First Name</label><input type="text" id="clientFirstName"
+                                    placeholder="John" oninput="updateHeader()"></div>
+                            <div class="input-group"><label>Last Name</label><input type="text" id="clientLastName"
+                                    placeholder="Smith" oninput="updateHeader()"></div>
+                        </div>
+                        <div class="input-group"><label>Spouse/Partner Name</label><input type="text" id="spouseName"
+                                placeholder="Jane Smith" oninput="updateHeader()"></div>
+                        <div class="input-row">
+                            <div class="input-group"><label>Client Birth Year</label>
+                                <input type="number" id="clientBirthYear" placeholder="1975" min="1900" max="2025"
+                                    onchange="recalculate()">
+                                <p class="help-text">For 401(k) catch-up limits</p>
+                            </div>
+                            <div class="input-group"><label>Spouse Birth Year</label>
+                                <input type="number" id="spouseBirthYear" placeholder="1978" min="1900" max="2025"
+                                    onchange="recalculate()">
+                                <p class="help-text">If applicable</p>
+                            </div>
+                        </div>
+                        <div class="input-row">
+                            <div class="input-group"><label>Tax Year</label><select id="taxYear"
+                                    onchange="updateHeader()">
+                                    <option value="2025">2025</option>
+                                    <option value="2026" selected>2026</option>
+                                    <option value="2027">2027</option>
+                                </select></div>
+                            <div class="input-group"><label>State</label><select id="clientState"
+                                    onchange="updateHeader()">
+                                    <option value="AL">Alabama</option>
+                                    <option value="AK">Alaska</option>
+                                    <option value="AZ">Arizona</option>
+                                    <option value="AR">Arkansas</option>
+                                    <option value="CA">California</option>
+                                    <option value="CO">Colorado</option>
+                                    <option value="CT">Connecticut</option>
+                                    <option value="DE">Delaware</option>
+                                    <option value="FL">Florida</option>
+                                    <option value="GA">Georgia</option>
+                                    <option value="HI">Hawaii</option>
+                                    <option value="ID">Idaho</option>
+                                    <option value="IL">Illinois</option>
+                                    <option value="IN">Indiana</option>
+                                    <option value="IA">Iowa</option>
+                                    <option value="KS">Kansas</option>
+                                    <option value="KY">Kentucky</option>
+                                    <option value="LA">Louisiana</option>
+                                    <option value="ME">Maine</option>
+                                    <option value="MD">Maryland</option>
+                                    <option value="MA">Massachusetts</option>
+                                    <option value="MI">Michigan</option>
+                                    <option value="MN">Minnesota</option>
+                                    <option value="MS">Mississippi</option>
+                                    <option value="MO" selected>Missouri</option>
+                                    <option value="MT">Montana</option>
+                                    <option value="NE">Nebraska</option>
+                                    <option value="NV">Nevada</option>
+                                    <option value="NH">New Hampshire</option>
+                                    <option value="NJ">New Jersey</option>
+                                    <option value="NM">New Mexico</option>
+                                    <option value="NY">New York</option>
+                                    <option value="NC">North Carolina</option>
+                                    <option value="ND">North Dakota</option>
+                                    <option value="OH">Ohio</option>
+                                    <option value="OK">Oklahoma</option>
+                                    <option value="OR">Oregon</option>
+                                    <option value="PA">Pennsylvania</option>
+                                    <option value="RI">Rhode Island</option>
+                                    <option value="SC">South Carolina</option>
+                                    <option value="SD">South Dakota</option>
+                                    <option value="TN">Tennessee</option>
+                                    <option value="TX">Texas</option>
+                                    <option value="UT">Utah</option>
+                                    <option value="VT">Vermont</option>
+                                    <option value="VA">Virginia</option>
+                                    <option value="WA">Washington</option>
+                                    <option value="WV">West Virginia</option>
+                                    <option value="WI">Wisconsin</option>
+                                    <option value="WY">Wyoming</option>
+                                </select></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><span class="icon"></span>FICA Tax Settings</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="input-row">
+                                <div class="input-group"><label>SS Tax Rate</label>
+                                    <div class="input-with-suffix"><input type="number" id="ssTaxRate" value="6.2"
+                                            step="0.1" onchange="recalculate()"><span class="suffix">%</span></div>
+                                </div>
+                                <div class="input-group"><label>SS Wage Base (2026)</label>
+                                    <div class="input-with-prefix"><span class="prefix">$</span><input type="number"
+                                            id="ssWageBase" value="184500" step="100" onchange="recalculate()"></div>
+                                </div>
+                            </div>
+                            <div class="input-row">
+                                <div class="input-group"><label>Medicare Rate</label>
+                                    <div class="input-with-suffix"><input type="number" id="medicareTaxRate"
+                                            value="1.45" step="0.01" onchange="recalculate()"><span
+                                            class="suffix">%</span></div>
+                                </div>
+                                <div class="input-group"><label>Addl Medicare (>$200k)</label>
+                                    <div class="input-with-suffix"><input type="number" id="addlMedicareRate"
+                                            value="0.9" step="0.1" onchange="recalculate()"><span
+                                            class="suffix">%</span></div>
+                                </div>
+                            </div>
+                            <div class="fica-info"><strong>FICA applies to:</strong> W-2 Wages only. Does NOT apply to
+                                1099-R, Social Security, dividends, interest, or other non-wage income.</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><span class="icon"></span>Monthly Living Expenses</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="input-group"><label>Total Monthly Expenses</label>
+                                <div class="input-with-prefix"><span class="prefix">$</span><input type="number"
+                                        id="livingExpenses" value="0" step="100" onchange="recalculate()"></div>
+                            </div>
+                            <p class="help-text">Income sources marked "priority for expenses" will be applied first.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><span class="icon"></span>Additional Annual Savings</h2><button class="small-btn gold"
+                                onclick="addSavingsItem()">+ Add</button>
+                        </div>
+                        <div class="card-body" id="savingsContainer">
+                            <p class="help-text">Click "+ Add" to add savings goals.</p>
+                        </div>
+                    </div>
+            </aside>
+            <main class="main-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><span class="icon"></span>Income Sources</h2><button class="small-btn gold"
+                            onclick="addIncomeSource()">+ Add Income</button>
+                    </div>
+                    <div class="card-body" id="incomeSourcesContainer">
+                        <div class="add-btn" onclick="addIncomeSource()">+ Add Your First Income Source</div>
+                    </div>
+                </div>
+                <div class="tabs"><button class="tab active" onclick="showTab('overview')">Overview</button><button
+                        class="tab" onclick="showTab('monthly')">Monthly Detail</button><button class="tab"
+                        onclick="showTab('401k')">401(k) Settings</button></div>
+                <div id="overview-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Monthly Quick View</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="month-grid" id="monthGrid"></div>
+                        </div>
+                    </div>
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <h3>Annual Income Summary</h3>
+                            <div id="incomeSummary"></div>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Tax Withholding Summary</h3>
+                            <div id="taxSummary"></div>
+                        </div>
+                        <div class="summary-card">
+                            <h3>401(k) Contributions</h3>
+                            <div id="k401Summary"></div>
+                        </div>
+                        <div class="summary-card">
+                            <h3>401(k) Loan Repayments</h3>
+                            <div id="loanSummary"></div>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Additional Savings</h3>
+                            <div id="savingsSummary"></div>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Living Expenses</h3>
+                            <div id="expensesSummary"></div>
+                        </div>
+                        <div class="summary-card grand-total-card">
+                            <h3>Grand Total</h3>
+                            <div id="grandTotalSummary"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="monthly-tab" style="display:none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Monthly Cash Flow Detail</h2>
+                        </div>
+                        <div class="card-body" style="overflow-x:auto;">
+                            <table class="detail-table">
+                                <thead id="monthlyHead"></thead>
+                                <tbody id="monthlyBody"></tbody>
+                                <tfoot id="monthlyFoot"></tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div id="401k-tab" style="display:none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Monthly 401(k) Contributions & Loans</h2>
+                        </div>
+                        <div class="card-body" id="k401Container">
+                            <p class="help-text">Add W-2 income with 401(k) enabled to configure contributions.</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <div class="toast" id="toast"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none"
+            viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg><span id="toastMsg">Saved!</span></div>
+    <script>
+        // Scenario Manager State
+        let savedScenarios = [];
+
+        // Load saved scenarios from localStorage on page load
+        function loadSavedScenarios() {
+            try {
+                const loaded = localStorage.getItem('cashflowCalculatorSavedScenarios');
+                if (loaded) {
+                    savedScenarios = JSON.parse(loaded);
+                    updateScenarioDropdown();
+                }
+            } catch (e) {
+                console.warn('Failed to load saved scenarios', e);
+            }
+        }
+
+        // Update the scenario dropdown with saved scenarios
+        function updateScenarioDropdown() {
+            const dropdown = document.getElementById('scenarioDropdown');
+            if (!dropdown) return;
+            dropdown.innerHTML = '<option value="">Load Saved Scenario...</option>';
+            savedScenarios.forEach((s, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = `${s.name} [${s.tag || 'No Tag'}]`;
+                dropdown.appendChild(opt);
+            });
+        }
+
+        // Get current scenario data
+        function getCurrentScenarioData() {
+            return {
+                clientFirstName: $t('clientFirstName'),
+                clientLastName: $t('clientLastName'),
+                spouseName: $t('spouseName'),
+                clientBirthYear: $t('clientBirthYear'),
+                spouseBirthYear: $t('spouseBirthYear'),
+                taxYear: $t('taxYear'),
+                clientState: $t('clientState'),
+                filingStatus: $t('filingStatus'),
+                extraStateWithholding: $t('extraStateWithholding'),
+                livingExpenses: $t('livingExpenses'),
+                ssTaxRate: $t('ssTaxRate'),
+                ssWageBase: $t('ssWageBase'),
+                medicareTaxRate: $t('medicareTaxRate'),
+                addlMedicareRate: $t('addlMedicareRate'),
+                incomeSources: incomeSources,
+                savingsItems: savingsItems,
+                monthlyK401: monthlyK401,
+                monthlyLoans: monthlyLoans,
+                nextIncomeId: nextIncomeId,
+                nextSavingsId: nextSavingsId
+            };
+        }
+
+        // Save current scenario to localStorage
+        function saveToLocalStorage() {
+            const clientName = ($t('clientFirstName') + ' ' + $t('clientLastName')).trim() || 'My Scenario';
+            const scenarioName = prompt('Enter a name for this scenario:', clientName);
+            if (!scenarioName) return;
+            const tagName = prompt('Enter a tag (e.g. Base, Optimistic, Conservative):', 'Base');
+
+            const newScenario = {
+                name: scenarioName,
+                tag: tagName || 'No Tag',
+                data: getCurrentScenarioData(),
+                timestamp: new Date().toISOString()
+            };
+
+            savedScenarios = [newScenario, ...savedScenarios.filter(s => s.name !== scenarioName)].slice(0, 20);
+            localStorage.setItem('cashflowCalculatorSavedScenarios', JSON.stringify(savedScenarios));
+            updateScenarioDropdown();
+            toast('Scenario "' + scenarioName + '" saved!');
+        }
+
+        // Load selected scenario from dropdown
+        function loadSelectedScenario() {
+            const dropdown = document.getElementById('scenarioDropdown');
+            const idx = parseInt(dropdown.value);
+            if (isNaN(idx) || !savedScenarios[idx]) return;
+
+            const scenario = savedScenarios[idx];
+            applyScenarioData(scenario.data);
+            toast('Scenario "' + scenario.name + '" loaded!');
+            dropdown.value = '';
+        }
+
+        // Apply scenario data to the form
+        function applyScenarioData(d) {
+            if (d.clientFirstName) $('clientFirstName').value = d.clientFirstName;
+            if (d.clientLastName) $('clientLastName').value = d.clientLastName;
+            if (d.spouseName) $('spouseName').value = d.spouseName;
+            if (d.clientBirthYear) $('clientBirthYear').value = d.clientBirthYear;
+            if (d.spouseBirthYear) $('spouseBirthYear').value = d.spouseBirthYear;
+            if (d.taxYear) $('taxYear').value = d.taxYear;
+            if (d.clientState) $('clientState').value = d.clientState;
+            if (d.filingStatus) $('filingStatus').value = d.filingStatus;
+            if (d.extraStateWithholding) $('extraStateWithholding').value = d.extraStateWithholding;
+            if (d.livingExpenses) $('livingExpenses').value = d.livingExpenses;
+            if (d.ssTaxRate) $('ssTaxRate').value = d.ssTaxRate;
+            if (d.ssWageBase) $('ssWageBase').value = d.ssWageBase;
+            if (d.medicareTaxRate) $('medicareTaxRate').value = d.medicareTaxRate;
+            if (d.addlMedicareRate) $('addlMedicareRate').value = d.addlMedicareRate;
+            if (d.incomeSources) incomeSources = d.incomeSources;
+            if (d.savingsItems) savingsItems = d.savingsItems;
+            if (d.monthlyK401) monthlyK401 = d.monthlyK401;
+            if (d.monthlyLoans) monthlyLoans = d.monthlyLoans;
+            if (d.nextIncomeId) nextIncomeId = d.nextIncomeId;
+            if (d.nextSavingsId) nextSavingsId = d.nextSavingsId;
+
+            updateHeader();
+            renderIncomeSources();
+            renderSavingsItems();
+            recalculate();
+        }
+
+        // Export scenario as JSON file
+        function exportScenarioJSON() {
+            const clientName = ($t('clientFirstName') + ' ' + $t('clientLastName')).trim() || 'export';
+            const data = {
+                name: clientName,
+                exportDate: new Date().toISOString(),
+                tool: 'Cash Flow Calculator',
+                scenario: getCurrentScenarioData()
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'cashflow_scenario_' + clientName.replace(/[^a-z0-9]/gi, '_') + '.json';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Import scenario from JSON file
+        function importScenarioJSON(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    if (data.scenario) {
+                        applyScenarioData(data.scenario);
+                        toast('Scenario imported successfully!');
+                    } else {
+                        alert('Invalid scenario file format.');
+                    }
+                } catch (err) {
+                    alert('Error reading JSON file: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = null;
+        }
+
+        const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const INCOME_TYPES = {
+            'w2': { name: 'W-2 Wages', hasFICA: true, has401k: true, formType: 'w4' },
+            'w2_bonus': { name: 'W-2 Bonus/Commission', hasFICA: true, has401k: true, formType: 'w4' },
+            '1099r_pension': { name: '1099-R Pension', hasFICA: false, has401k: false, formType: 'w4p' },
+            '1099r_ira': { name: '1099-R IRA Distribution', hasFICA: false, has401k: false, formType: 'w4r' },
+            'ssa_1099': { name: 'Social Security (SSA-1099)', hasFICA: false, has401k: false, formType: 'w4v' },
+            'unemployment': { name: 'Unemployment', hasFICA: false, has401k: false, formType: 'w4v' },
+            '1099_div': { name: '1099-DIV Dividends', hasFICA: false, has401k: false, formType: 'none', isEstimated: true },
+            '1099_int': { name: '1099-INT Interest', hasFICA: false, has401k: false, formType: 'none', isEstimated: true },
+            '1099_nec': { name: '1099-NEC Self-Employment', hasFICA: false, has401k: false, hasSETax: true, formType: 'none', isEstimated: true },
+            'k1': { name: 'K-1 Partnership/S-Corp', hasFICA: false, has401k: false, formType: 'none', isEstimated: true },
+            'rental': { name: 'Rental Income', hasFICA: false, has401k: false, formType: 'none', isEstimated: true },
+            'deferred_comp': { name: 'Deferred Compensation', hasFICA: false, has401k: false, formType: 'w4r' },
+            'other': { name: 'Other Income', hasFICA: false, has401k: false, formType: 'w4r' }
+        };
+
+        // Tax Constants - 2026
+        const ADDITIONAL_MEDICARE_THRESHOLDS = {
+            'single': 200000,
+            'married_joint': 250000,
+            'married_separate': 125000,
+            'head_household': 200000,
+            'widow': 250000
+        };
+        const SE_TAX_RATE = 0.153; // 15.3% (12.4% SS + 2.9% Medicare)
+        const SE_TAX_SS_RATE = 0.124;
+        const SE_TAX_MED_RATE = 0.029;
+        const SE_NET_EARNINGS_FACTOR = 0.9235; // 92.35% of gross
+
+        // 401(k) Limits - 2026 per IRS Notice 2025-67
+        const LIMIT_402G_REGULAR = 24500;  // Elective deferral limit
+        const LIMIT_402G_CATCHUP = 8000;   // Standard catch-up (50+)
+        const LIMIT_402G_CATCHUP_60_63 = 11250; // Enhanced catch-up (60-63)
+        const LIMIT_415C = 72000; // Total DC limit (employee + employer)
+
+        // Default withholding rates
+        const DEFAULT_FED_WITHHOLDING = 22;
+        const DEFAULT_STATE_WITHHOLDING_MO = 4.8;
+
+        /**
+         * Calculates age-based 401(k) elective deferral limit
+         * @param {number} birthYear - Year of birth
+         * @param {number} taxYear - Current tax year
+         * @returns {number} Maximum elective deferral limit
+         */
+        function get401kLimit(birthYear, taxYear) {
+            if (!birthYear || birthYear < 1900) return LIMIT_402G_REGULAR;
+            const age = taxYear - birthYear;
+            if (age >= 60 && age <= 63) {
+                return LIMIT_402G_REGULAR + LIMIT_402G_CATCHUP_60_63; // $35,750 for 2026
+            } else if (age >= 50) {
+                return LIMIT_402G_REGULAR + LIMIT_402G_CATCHUP; // $32,500 for 2026
+            }
+            return LIMIT_402G_REGULAR; // $24,500 for 2026
+        }
+
+        /**
+         * Calculates Federal Withholding using IRS Pub 15-T Worksheet 1A (2026)
+         * @param {number} grossPay - Taxable wages for the period (after pre-tax 401k deductions)
+         * @param {string} frequency - 'weekly', 'bi-weekly', 'semi-monthly', 'monthly'
+         * @param {object} w4 - W-4 settings { filingStatus, step2Checked, step3, step4a, step4b, step4c }
+         * @returns {number} Federal withholding for this pay period
+         */
+        function calculateFederalWithholding(grossPay, frequency, w4) {
+            // Get withholding tables from constants
+            const config = FinancialConstants.payrollWithholding2026;
+            if (!config) {
+                // CRITICAL: Tables not loaded - notify user prominently
+                const errorMsg = '⚠️ Tax tables not loaded - using 22% estimate';
+                console.error('CRITICAL: Payroll withholding tables not found in FinancialConstants');
+                if (typeof toast === 'function') toast(errorMsg);
+                // Still calculate something, but user is warned
+                return grossPay * 0.22;
+            }
+
+            // Step 1: Determine pay periods per year (Worksheet 1A Line 1b)
+            const payPeriodsMap = {
+                'weekly': 52,
+                'bi-weekly': 26,
+                'semi-monthly': 24,
+                'monthly': 12
+            };
+            const annualPayPeriods = payPeriodsMap[frequency] || 12;
+
+            // Step 1c: Annualize wages
+            let annualWage = grossPay * annualPayPeriods;
+
+            // Step 1e: Add Step 4(a) - Other Income (annual amount added to wage)
+            annualWage += (w4.step4a || 0);
+
+            // Step 1h: Subtract Step 4(b) - Deductions (annual amount subtracted)
+            annualWage -= (w4.step4b || 0);
+
+            // Step 1g: Standard Deduction Adjustment
+            // If Step 2 is checked, use 0. Otherwise use table value.
+            let deductionAdj = 0;
+            if (!w4.step2Checked) {
+                // Map filing status to adjustment key
+                let statusKey = 'single';
+                if (w4.filingStatus === 'married_joint' || w4.filingStatus === 'widow') {
+                    statusKey = 'mfj';
+                } else if (w4.filingStatus === 'married_separate') {
+                    statusKey = 'mfs';
+                } else if (w4.filingStatus === 'head_household') {
+                    statusKey = 'hoh';
+                }
+                deductionAdj = config.standardDeductionAdjustment[statusKey] || 8600;
+            }
+            annualWage -= deductionAdj;
+
+            // Step 1i: Adjusted Annual Wage Amount (floor at 0)
+            const adjustedAnnualWage = Math.max(0, annualWage);
+
+            // Step 2: Look up tax in bracket table
+            // Select table based on Step 2 checkbox
+            const tableType = w4.step2Checked ? 'checkbox' : 'standard';
+            const tableSet = config.tables[tableType] || config.tables.standard;
+
+            // Map filing status to table key
+            let tableKey = 'single';
+            if (w4.filingStatus === 'married_joint' || w4.filingStatus === 'widow') {
+                tableKey = 'mfj';
+            } else if (w4.filingStatus === 'head_household') {
+                tableKey = 'hoh';
+            }
+            // Note: MFS uses single table per IRS instructions
+
+            const brackets = tableSet[tableKey] || tableSet.single;
+
+            // Find the appropriate bracket - with safety check
+            let bracket = brackets.find(b => adjustedAnnualWage < b.limit);
+
+            // Safety: If no bracket found (shouldn't happen with Infinity), use highest
+            if (!bracket) {
+                console.warn('No bracket found for wage:', adjustedAnnualWage, '- using highest bracket');
+                bracket = brackets[brackets.length - 1];
+            }
+
+            // Additional safety: verify bracket has required properties
+            if (!bracket || typeof bracket.base !== 'number' || typeof bracket.rate !== 'number') {
+                console.error('Invalid bracket structure:', bracket);
+                return grossPay * 0.22; // Emergency fallback
+            }
+
+            // Calculate tentative annual tax (Line 2h logic)
+            // Formula: base + ((adjustedWage - excess) * rate)
+            let tentativeAnnualTax = bracket.base + ((adjustedAnnualWage - bracket.excess) * bracket.rate);
+
+            // Step 3: Account for credits
+            // Line 3b: Step 3 (Dependents/Credits) is an annual reduction
+            tentativeAnnualTax -= (w4.step3 || 0);
+
+            // Ensure tax is not negative
+            tentativeAnnualTax = Math.max(0, tentativeAnnualTax);
+
+            // Step 4: Final withholding
+            // Line 4a: Convert back to per-pay-period
+            let periodWithholding = tentativeAnnualTax / annualPayPeriods;
+
+            // Line 4b: Add Step 4(c) - Extra withholding per pay period
+            periodWithholding += (w4.step4c || 0);
+
+            // Return final amount (cannot be negative)
+            return Math.max(0, periodWithholding);
+        }
+
+        let incomeSources = [], savingsItems = [], monthlyK401 = {}, monthlyLoans = {}, cachedResults = null, nextIncomeId = 1, nextSavingsId = 1;
+        const $ = id => document.getElementById(id), $v = id => parseFloat($(id)?.value) || 0, $t = id => $(id)?.value || '';
+        const fC = n => '$' + Math.round(n).toLocaleString(), fCP = n => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const toast = msg => { $('toastMsg').textContent = msg; $('toast').classList.add('show'); setTimeout(() => $('toast').classList.remove('show'), 3000); };
+
+        function updateHeader() {
+            const first = $t('clientFirstName'), last = $t('clientLastName'), spouse = $t('spouseName');
+            let name = first || last ? (first + ' ' + last).trim() : '';
+            // Append last name to spouse if spouse doesn't already contain the last name
+            let spouseDisplay = spouse;
+            if (spouse && last && !spouse.toLowerCase().includes(last.toLowerCase())) {
+                spouseDisplay = (spouse + ' ' + last).trim();
+            }
+            if (spouseDisplay && name) name += ' & ' + spouseDisplay; else if (spouseDisplay) name = spouseDisplay;
+            $('clientNameDisplay').textContent = name || '';
+            const state = $('clientState'), year = $t('taxYear');
+            const stateName = state.options[state.selectedIndex]?.text || '';
+            $('headerInfo').textContent = name ? stateName + ' • ' + year : 'Configure client information to begin';
+        }
+
+        function addIncomeSource() {
+            const id = nextIncomeId++;
+            incomeSources.push({
+                id,
+                name: '',
+                type: 'w2',
+                incomeMode: 'consistent',
+                paycheckAmount: 0, // NEW: Per-paycheck gross amount
+                monthlyAmount: 0, // Kept for backward compatibility (calculated from paycheck × frequency)
+                monthlyAmounts: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                lumpSumMonth: 6,
+                lumpSumAmount: 0,
+                fedWithholding: DEFAULT_FED_WITHHOLDING,
+                stateWithholding: DEFAULT_STATE_WITHHOLDING_MO,
+                extraStateWithholding: 0, // Extra state withholding per paycheck
+                useForExpenses: false,
+                has401k: true,
+                owner: 'client', // 'client' or 'spouse' - for 401(k) limit tracking
+                payFrequency: 'monthly', // monthly, semi-monthly, bi-weekly, weekly
+                k401Mode: 'uniform', // NEW: 'uniform' or 'variable' for 401k contributions
+                uniformK401: { preTax: 0, roth: 0, afterTax: 0 }, // NEW: Uniform 401k percentages
+                // Withholding Configuration (Refactor)
+                withholdingMethod: 'form', // 'flat' or 'form'
+                formType: INCOME_TYPES['w2'].formType || 'w4',
+                w4Settings: {
+                    filingStatus: '', // defaults to global if empty
+                    step2Checked: false,
+                    step3Dependents: 0,
+                    step4aOtherIncome: 0,
+                    step4bDeductions: 0,
+                    step4cExtraWithholding: 0,
+                    manualRate: 0, // For W-4R/W-4V or flat method
+                    noWithholding: false // For W-4P
+                }
+            });
+            monthlyK401[id] = MONTHS.map(() => ({ preTax: 0, roth: 0, afterTax: 0 }));
+            monthlyLoans[id] = MONTHS.map(() => 0); // Initialize loan payments array
+            renderIncomeSources(); recalculate(); syncIncomesToGlobalState();
+        }
+
+        // Sync income sources back to GlobalStateManager for cross-tool communication
+        function syncIncomesToGlobalState() {
+            if (typeof GlobalStateManager === 'undefined') return;
+            const globalIncomeSources = incomeSources.map(src => {
+                // Calculate annual amount based on income mode
+                let annualAmount = 0;
+                if (src.incomeMode === 'consistent') {
+                    annualAmount = (src.monthlyAmount || 0) * 12;
+                } else if (src.incomeMode === 'variable') {
+                    annualAmount = (src.monthlyAmounts || []).reduce((a, b) => a + (parseFloat(b) || 0), 0);
+                } else if (src.incomeMode === 'lumpsum') {
+                    annualAmount = src.lumpSumAmount || 0;
+                }
+                return {
+                    id: 'cf_' + src.id, // Prefix to identify cashflow-originated sources
+                    type: src.type || 'w2',
+                    name: src.name || INCOME_TYPES[src.type]?.name || 'Income',
+                    amount: annualAmount,
+                    owner: 'client1' // Default owner
+                };
+            });
+            GlobalStateManager.setState({ incomeSources: globalIncomeSources });
+        }
+
+        function removeIncomeSource(id) {
+            incomeSources = incomeSources.filter(s => s.id !== id);
+            delete monthlyK401[id];
+            delete monthlyLoans[id];
+            renderIncomeSources(); recalculate(); syncIncomesToGlobalState();
+        }
+
+        function updateSource(id, field, value) {
+            const src = incomeSources.find(s => s.id === id); if (!src) return;
+            // Validate percentage fields (0-100)
+            if (field === 'fedWithholding' || field === 'stateWithholding') {
+                value = Math.max(0, Math.min(100, parseFloat(value) || 0));
+            }
+            src[field] = value;
+            if (field === 'type') {
+                src.has401k = INCOME_TYPES[value].has401k;
+                src.formType = INCOME_TYPES[value].formType || 'none';
+            }
+            renderIncomeSources(); recalculate(); syncIncomesToGlobalState();
+        }
+
+        function updateW4Setting(id, setting, value) {
+            const src = incomeSources.find(s => s.id === id); if (!src) return;
+            if (!src.w4Settings) src.w4Settings = {};
+            src.w4Settings[setting] = value;
+            renderIncomeSources(); recalculate();
+        }
+
+        function setWithholdingMethod(id, method) {
+            const src = incomeSources.find(s => s.id === id); if (!src) return;
+            src.withholdingMethod = method;
+            renderIncomeSources(); recalculate();
+        }
+
+        function renderWithholdingConfig(s) {
+            const method = s.withholdingMethod || 'form';
+            const methodToggle = `
+                <div class="input-group full-width">
+                    <label>Federal Withholding Method</label>
+                    <div class="income-type-toggle">
+                        <button class="toggle-btn ${method === 'form' ? 'active' : ''}" onclick="setWithholdingMethod(${s.id},'form')">Detailed (Form)</button>
+                        <button class="toggle-btn ${method === 'flat' ? 'active' : ''}" onclick="setWithholdingMethod(${s.id},'flat')">Simple (Flat %)</button>
+                    </div>
+                </div>`;
+
+            let content = '';
+            if (method === 'flat') {
+                content = `
+                <div class="input-group">
+                    <label>Federal W/H Rate</label>
+                    <div class="input-with-suffix">
+                        <input type="number" value="${s.w4Settings?.manualRate || 0}" step="0.1" onchange="updateW4Setting(${s.id}, 'manualRate', parseFloat(this.value)||0)">
+                        <span class="suffix">%</span>
+                    </div>
+                </div>`;
+            } else {
+                // Form logic - derive formType from source or INCOME_TYPES if not explicitly set
+                const fType = s.formType || INCOME_TYPES[s.type]?.formType || 'none';
+                const w4 = s.w4Settings || {}; // Guard for legacy sources
+                if (fType === 'w4' || fType === 'w4p') {
+                    const isPension = fType === 'w4p';
+                    const filingOptions = `
+                        <option value="single" ${w4.filingStatus === 'single' ? 'selected' : ''}>Single</option>
+                        <option value="married_joint" ${!w4.filingStatus || w4.filingStatus === 'married_joint' ? 'selected' : ''}>Married Filing Jointly</option>
+                        <option value="head_household" ${w4.filingStatus === 'head_household' ? 'selected' : ''}>Head of Household</option>
+                        <option value="married_separate" ${w4.filingStatus === 'married_separate' ? 'selected' : ''}>Married Filing Separately</option>
+                        <option value="widow" ${w4.filingStatus === 'widow' ? 'selected' : ''}>Qualifying Surviving Spouse</option>
+                    `;
+
+                    content += `
+                    <div class="input-group full-width">
+                        <label>Filing Status (Form ${isPension ? 'W-4P' : 'W-4'})</label>
+                        <select onchange="updateW4Setting(${s.id}, 'filingStatus', this.value)">${filingOptions}</select>
+                    </div>
+                    ${isPension ? `
+                    <div class="input-group full-width">
+                         <div class="checkbox-group">
+                            <input type="checkbox" id="noW${s.id}" ${w4.noWithholding ? 'checked' : ''} onchange="updateW4Setting(${s.id}, 'noWithholding', this.checked)">
+                            <label for="noW${s.id}">No Withholding (Skip verification)</label>
+                         </div>
+                    </div>` : ''}
+                    <div class="input-group full-width">
+                         <div class="checkbox-group">
+                            <input type="checkbox" id="s2${s.id}" ${w4.step2Checked ? 'checked' : ''} onchange="updateW4Setting(${s.id}, 'step2Checked', this.checked)">
+                            <label for="s2${s.id}">Step 2: Multiple Jobs / Spouse Works</label>
+                         </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Step 3 (Dependents) $</label>
+                            <div class="input-with-prefix"><span class="prefix">$</span>
+                            <input type="number" value="${w4.step3Dependents || 0}" step="500" onchange="updateW4Setting(${s.id}, 'step3Dependents', parseFloat(this.value)||0)"></div>
+                        </div>
+                        <div class="input-group">
+                            <label>Step 4a (Other) $</label>
+                             <div class="input-with-prefix"><span class="prefix">$</span>
+                            <input type="number" value="${w4.step4aOtherIncome || 0}" step="100" onchange="updateW4Setting(${s.id}, 'step4aOtherIncome', parseFloat(this.value)||0)"></div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Step 4b (Deductions) $</label>
+                             <div class="input-with-prefix"><span class="prefix">$</span>
+                            <input type="number" value="${w4.step4bDeductions || 0}" step="100" onchange="updateW4Setting(${s.id}, 'step4bDeductions', parseFloat(this.value)||0)"></div>
+                        </div>
+                        <div class="input-group">
+                            <label>Step 4c (Extra W/H) $</label>
+                             <div class="input-with-prefix"><span class="prefix">$</span>
+                            <input type="number" value="${w4.step4cExtraWithholding || 0}" step="10" onchange="updateW4Setting(${s.id}, 'step4cExtraWithholding', parseFloat(this.value)||0)"></div>
+                        </div>
+                    </div>`;
+                } else if (fType === 'w4r') {
+                    content += `
+                    <div class="input-group">
+                        <label>Withholding Rate (W-4R)</label>
+                        <div class="input-with-suffix">
+                            <input type="number" value="${w4.manualRate || (s.type === '1099r_ira' ? 10 : 0)}" step="1" onchange="updateW4Setting(${s.id}, 'manualRate', parseFloat(this.value)||0)">
+                            <span class="suffix">%</span>
+                        </div>
+                        <p class="help-text">Nonperiodic default: 10%. Eligible Rollover: 20%.</p>
+                    </div>`;
+                } else if (fType === 'w4v') {
+                    if (s.type === 'unemployment') {
+                        content += `
+                        <div class="input-group full-width">
+                             <div class="checkbox-group">
+                                <input type="checkbox" id="w4v${s.id}" ${w4.manualRate === 10 ? 'checked' : ''} onchange="updateW4Setting(${s.id}, 'manualRate', this.checked ? 10 : 0)">
+                                <label for="w4v${s.id}">Withhold 10% Federal Tax (W-4V)</label>
+                             </div>
+                        </div>`;
+                    } else { // SSA
+                        const rates = [0, 7, 10, 12, 22]; // Allowed rates
+                        content += `
+                        <div class="input-group">
+                            <label>Voluntary Rate (W-4V)</label>
+                            <select onchange="updateW4Setting(${s.id}, 'manualRate', parseFloat(this.value))">
+                                ${rates.map(r => `<option value="${r}" ${w4.manualRate === r ? 'selected' : ''}>${r}%</option>`).join('')}
+                            </select>
+                        </div>`;
+                    }
+                } else {
+                    content += `<div class="help-text" style="color:#666; font-style:italic;">No specific tax form. Use Flat Rate or estimated payments.</div>`;
+                }
+            }
+
+            return `<div class="withholding-config-section" style="background:rgba(0,32,91,0.03); padding:10px; border-radius:6px; margin-bottom:12px; border:1px solid #eee;">
+                ${methodToggle}
+                ${content}
+            </div>`;
+        }
+
+        function updateMonthlyAmount(id, monthIndex, value) {
+            const src = incomeSources.find(s => s.id === id); if (!src) return;
+            if (!src.monthlyAmounts) src.monthlyAmounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            src.monthlyAmounts[monthIndex] = parseFloat(value) || 0;
+            recalculate(); syncIncomesToGlobalState();
+            // Update the total display without full re-render
+            const totalEl = document.getElementById('varTotal' + id);
+            if (totalEl) {
+                const total = src.monthlyAmounts.reduce((a, b) => a + b, 0);
+                totalEl.textContent = fC(total);
+            }
+        }
+
+        function setIncomeMode(id, mode) {
+            const src = incomeSources.find(s => s.id === id); if (!src) return;
+            src.incomeMode = mode;
+            renderIncomeSources(); recalculate();
+        }
+
+        // Get number of pay periods per month based on frequency
+        function getPayPeriodsPerMonth(frequency) {
+            switch (frequency) {
+                case 'weekly': return 52 / 12; // ~4.33
+                case 'bi-weekly': return 26 / 12; // ~2.17
+                case 'semi-monthly': return 2;
+                case 'monthly':
+                default: return 1;
+            }
+        }
+
+        function renderIncomeSources() {
+            const c = $('incomeSourcesContainer');
+            if (!incomeSources.length) { c.innerHTML = '<div class="add-btn" onclick="addIncomeSource()">+ Add Your First Income Source</div>'; return; }
+            c.innerHTML = incomeSources.map(s => {
+                const t = INCOME_TYPES[s.type];
+                const mode = s.incomeMode || 'consistent';
+                const amounts = s.monthlyAmounts || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+                const varTotal = amounts.reduce((a, b) => a + b, 0);
+
+                let incomeInputHtml = '';
+                if (mode === 'consistent') {
+                    // Calculate monthly amount for display
+                    const paycheckAmt = s.paycheckAmount || 0;
+                    const periodsPerMonth = getPayPeriodsPerMonth(s.payFrequency || 'monthly');
+                    const calculatedMonthly = paycheckAmt * periodsPerMonth;
+                    const annualGross = calculatedMonthly * 12;
+
+                    incomeInputHtml = `
+                <div class="input-group full-width">
+                    <label>Gross Paycheck Amount</label>
+                    <div class="input-with-prefix">
+                        <span class="prefix">$</span>
+                        <input type="number" value="${paycheckAmt}" step="100" onchange="updateSource(${s.id},'paycheckAmount',parseFloat(this.value)||0)">
+                    </div>
+                    <p class="help-text">Amount per pay period (before taxes/deductions)</p>
+                </div>
+                <div class="variable-total" style="margin-top:8px">
+                    <span class="label">Calculated Monthly:</span>
+                    <span class="value">${fC(calculatedMonthly)}</span>
+                </div>
+                <div class="variable-total" style="margin-top:4px">
+                    <span class="label">Annual Gross:</span>
+                    <span class="value">${fC(annualGross)}</span>
+                </div>`;
+                } else if (mode === 'variable') {
+                    incomeInputHtml = `
+                <div class="input-group full-width">
+                    <label>Monthly Gross Income by Month</label>
+                    <div class="monthly-income-grid">
+                        ${MONTHS_SHORT.map((m, i) => `
+                            <div class="monthly-income-item">
+                                <label>${m}</label>
+                                <div class="input-with-prefix">
+                                    <span class="prefix">$</span>
+                                    <input type="number" value="${amounts[i] || 0}" step="100" onchange="updateMonthlyAmount(${s.id},${i},this.value)">
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="variable-total">
+                        <span class="label">Annual Total:</span>
+                        <span class="value" id="varTotal${s.id}">${fC(varTotal)}</span>
+                    </div>
+                </div>`;
+                } else if (mode === 'lumpsum') {
+                    incomeInputHtml = `
+                <div class="input-group">
+                    <label>Payment Month</label>
+                    <select onchange="updateSource(${s.id},'lumpSumMonth',parseInt(this.value))">
+                        ${MONTHS.map((m, i) => `<option value="${i}" ${s.lumpSumMonth === i ? 'selected' : ''}>${m}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Lump Sum Amount</label>
+                    <div class="input-with-prefix">
+                        <span class="prefix">$</span>
+                        <input type="number" value="${s.lumpSumAmount || 0}" step="100" onchange="updateSource(${s.id},'lumpSumAmount',parseFloat(this.value)||0)">
+                    </div>
+                </div>`;
+                }
+
+                // Pay frequency selector - affects income calculation for consistent mode
+                // and extra withholding calculation for W-2 income
+                const payFreqHtml = `
+                <div class="input-group">
+                    <label>Pay Frequency</label>
+                    <select onchange="updateSource(${s.id},'payFrequency',this.value)">
+                        <option value="monthly" ${(s.payFrequency || 'monthly') === 'monthly' ? 'selected' : ''}>Monthly (12/yr)</option>
+                        <option value="semi-monthly" ${s.payFrequency === 'semi-monthly' ? 'selected' : ''}>Semi-Monthly (24/yr)</option>
+                        <option value="bi-weekly" ${s.payFrequency === 'bi-weekly' ? 'selected' : ''}>Bi-Weekly (26/yr)</option>
+                        <option value="weekly" ${s.payFrequency === 'weekly' ? 'selected' : ''}>Weekly (52/yr)</option>
+                    </select>
+                    <p class="help-text">${t.hasFICA ? 'Used for income \u0026 withholding calculation' : 'Used for income calculation'}</p>
+                </div>`;
+
+                return `<div class="income-source">
+            <div class="income-source-header">
+                <h4>${s.name || 'New Income Source'} <span class="badge ${t.hasFICA ? 'fica' : 'no-fica'}">${t.hasFICA ? 'FICA' : 'No FICA'}</span></h4>
+                <button class="small-btn danger" onclick="removeIncomeSource(${s.id})">Remove</button>
+            </div>
+            <div class="income-source-grid">
+                <div class="input-group">
+                    <label>Source Name</label>
+                    <input type="text" value="${s.name}" placeholder="e.g., Primary Job" onchange="updateSource(${s.id},'name',this.value)">
+                </div>
+                <div class="input-group">
+                    <label>Income Type</label>
+                    <select onchange="updateSource(${s.id},'type',this.value)">
+                        ${Object.entries(INCOME_TYPES).map(([k, v]) => `<option value="${k}" ${s.type === k ? 'selected' : ''}>${v.name}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Owner</label>
+                    <select onchange="updateSource(${s.id},'owner',this.value)">
+                        <option value="client" ${(s.owner || 'client') === 'client' ? 'selected' : ''}>${$('clientFirstName')?.value || 'Client'}</option>
+                        <option value="spouse" ${s.owner === 'spouse' ? 'selected' : ''}>${$('spouseName')?.value || 'Spouse'}</option>
+                    </select>
+                    <p class="help-text">For 401(k) limit tracking</p>
+                </div>
+                <div style="grid-column: 1 / -1; width: 100%;">
+                    ${renderWithholdingConfig(s)}
+                </div>
+                <div class="input-group">
+                    <label>State Withholding</label>
+                    <div class="input-with-suffix">
+                        <input type="number" value="${s.stateWithholding}" step="0.1" onchange="updateSource(${s.id},'stateWithholding',parseFloat(this.value)||0)">
+                        <span class="suffix">%</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Extra State W/H</label>
+                    <div class="input-with-prefix">
+                        <span class="prefix">$</span>
+                        <input type="number" value="${s.extraStateWithholding || 0}" step="10" onchange="updateSource(${s.id},'extraStateWithholding',parseFloat(this.value)||0)">
+                    </div>
+                    <p class="help-text">Additional state withholding per paycheck</p>
+                </div>
+                ${payFreqHtml}
+                <div class="input-group full-width">
+                    <label>Income Schedule</label>
+                    <div class="income-type-toggle">
+                        <button class="toggle-btn ${mode === 'consistent' ? 'active' : ''}" onclick="setIncomeMode(${s.id},'consistent')">Consistent Monthly</button>
+                        <button class="toggle-btn ${mode === 'variable' ? 'active' : ''}" onclick="setIncomeMode(${s.id},'variable')">Variable Monthly</button>
+                        <button class="toggle-btn ${mode === 'lumpsum' ? 'active' : ''}" onclick="setIncomeMode(${s.id},'lumpsum')">One-Time Lump Sum</button>
+                    </div>
+                </div>
+                ${incomeInputHtml}
+                <div class="input-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="exp${s.id}" ${s.useForExpenses ? 'checked' : ''} onchange="updateSource(${s.id},'useForExpenses',this.checked)">
+                        <label for="exp${s.id}">Priority for living expenses</label>
+                    </div>
+                </div>
+                ${t.has401k ? `<div class="input-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="k401${s.id}" ${s.has401k ? 'checked' : ''} onchange="updateSource(${s.id},'has401k',this.checked)">
+                        <label for="k401${s.id}">401(k) contributions</label>
+                    </div>
+                </div>` : ''}
+            </div>
+        </div>`;
+            }).join('') + '<div class="add-btn" onclick="addIncomeSource()" style="margin-top:12px">+ Add Another Income Source</div>';
+        }
+
+        function addSavingsItem() { savingsItems.push({ id: nextSavingsId++, name: '', amount: 0 }); renderSavingsItems(); recalculate(); }
+        function removeSavingsItem(id) { savingsItems = savingsItems.filter(s => s.id !== id); renderSavingsItems(); recalculate(); }
+        function updateSavings(id, field, value) { const item = savingsItems.find(s => s.id === id); if (item) { item[field] = value; recalculate(); } }
+        function renderSavingsItems() {
+            const c = $('savingsContainer');
+            if (!savingsItems.length) { c.innerHTML = '<p class="help-text">Click "+ Add" to add savings goals.</p>'; return; }
+            c.innerHTML = savingsItems.map(s => '<div class="savings-item"><input type="text" value="' + s.name + '" placeholder="e.g., Backdoor Roth" onchange="updateSavings(' + s.id + ',\'name\',this.value)"><div class="input-with-prefix"><span class="prefix">$</span><input type="number" value="' + (s.amount || 0) + '" step="100" onchange="updateSavings(' + s.id + ',\'amount\',parseFloat(this.value)||0)"></div><button class="small-btn danger" onclick="removeSavingsItem(' + s.id + ')">×</button></div>').join('');
+        }
+
+        function getMonthlyGross(src, month) {
+            const mode = src.incomeMode || 'consistent';
+            if (mode === 'lumpsum') {
+                return month === src.lumpSumMonth ? (src.lumpSumAmount || 0) : 0;
+            } else if (mode === 'variable') {
+                const amounts = src.monthlyAmounts || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+                return amounts[month] || 0;
+            } else {
+                // Consistent mode: calculate from paycheck × periods per month
+                const paycheckAmount = src.paycheckAmount || 0;
+                const payPeriodsPerMonth = getPayPeriodsPerMonth(src.payFrequency || 'monthly');
+                return paycheckAmount * payPeriodsPerMonth;
+            }
+        }
+
+        function calcMonth(src, month, ytdWages, ytdAllWages, ownerYtd401k, ownerLimit) {
+            const gross = getMonthlyGross(src, month);
+            if (gross === 0) return { gross: 0, fedTax: 0, stateTax: 0, ficaSS: 0, ficaMed: 0, seTax: 0, preTax: 0, roth: 0, afterTax: 0, loanPayment: 0, extraFedWH: 0, extraStateWH: 0, net: 0, newYtd: ytdWages, newYtdAll: ytdAllWages, newOwnerYtd401k: ownerYtd401k, hitLimit: false };
+
+            const t = INCOME_TYPES[src.type];
+            const k = monthlyK401[src.id]?.[month] || { preTax: 0, roth: 0, afterTax: 0 };
+            const loanPayment = monthlyLoans[src.id]?.[month] || 0;
+
+            // Calculate requested 401k contributions
+            let preTaxReq = t.has401k && src.has401k ? gross * k.preTax / 100 : 0;
+            let rothReq = t.has401k && src.has401k ? gross * k.roth / 100 : 0;
+            let afterTaxReq = t.has401k && src.has401k ? gross * k.afterTax / 100 : 0;
+
+            // Enforce per-owner elective deferral limit (preTax + roth)
+            const electiveReq = preTaxReq + rothReq;
+            const remainingLimit = Math.max(0, ownerLimit - ownerYtd401k);
+            let preTax = preTaxReq, roth = rothReq, afterTax = afterTaxReq;
+            let hitLimit = false;
+
+            if (electiveReq > remainingLimit && remainingLimit >= 0) {
+                // Need to cap - proportionally reduce preTax and roth
+                const ratio = electiveReq > 0 ? remainingLimit / electiveReq : 0;
+                preTax = preTaxReq * ratio;
+                roth = rothReq * ratio;
+                hitLimit = true;
+            }
+
+            const newOwnerYtd401k = ownerYtd401k + preTax + roth;
+            const taxable = gross - preTax;
+
+            // Calculate federal withholding
+            // Calculate federal withholding
+            let fedTax = 0;
+            let extraFedWH = 0;
+
+            // Determine method and form type
+            // New sources have 'withholdingMethod' initialized. 
+            // Existing sources might be undefined -> default to 'form' if W-2, else check 'type'.
+            // Safest: Use source property if set, else imply from type (legacy compat).
+            const method = src.withholdingMethod || (t.hasFICA ? 'form' : 'flat');
+
+            // Helper: Global filing status fallback
+            const globalFilingStatus = $t('filingStatus');
+
+            if (method === 'flat') {
+                // Use manual rate (stored in w4Settings.manualRate or legacy fedWithholding if migrating?)
+                // We'll stick to new model. If user switched to flat, manualRate is used.
+                // Legacy 'fedWithholding' is still on the object but we want to use new UI manually.
+                // If src.withholdingMethod is undefined (legacy), we might want to use fedWithholding?
+                // But we initialized method to 'flat' for non-W2. So let's check.
+                const rate = src.withholdingMethod ? (src.w4Settings?.manualRate || 0) : (src.fedWithholding || 0);
+                fedTax = taxable * rate / 100;
+            } else {
+                // Form Method
+                const fType = src.formType || (t.hasFICA ? 'w4' : 'none');
+
+                if (fType === 'w4' || fType === 'w4p') {
+                    // W-4 / W-4P Logic (Pub 15-T)
+                    if (fType === 'w4p' && src.w4Settings?.noWithholding) {
+                        fedTax = 0;
+                    } else {
+                        const payFrequency = src.payFrequency || 'monthly';
+                        const payPeriodsPerMonth = getPayPeriodsPerMonth(payFrequency);
+
+                        const w4Data = {
+                            filingStatus: src.w4Settings?.filingStatus || globalFilingStatus, // Fallback
+                            step2Checked: src.w4Settings?.step2Checked || false,
+                            step3: src.w4Settings?.step3Dependents || 0,
+                            step4a: src.w4Settings?.step4aOtherIncome || 0,
+                            step4b: src.w4Settings?.step4bDeductions || 0,
+                            step4c: src.w4Settings?.step4cExtraWithholding || 0
+                        };
+
+                        const perPaycheckTaxable = taxable / payPeriodsPerMonth;
+                        const perPaycheckWithholding = calculateFederalWithholding(perPaycheckTaxable, payFrequency, w4Data);
+                        fedTax = perPaycheckWithholding * payPeriodsPerMonth; // Annualized tax -> monthly tax
+                        extraFedWH = w4Data.step4c * payPeriodsPerMonth;
+                    }
+                } else if (fType === 'w4r' || fType === 'w4v') {
+                    // Flat percentage based on form selection (e.g. 10%, 20%, 22%)
+                    const rate = src.w4Settings?.manualRate || 0;
+                    fedTax = taxable * rate / 100;
+                } else {
+                    // No specific form (e.g. 1099-NEC without W-4V) -> 0 withholding unless flat selected
+                    fedTax = 0;
+                }
+            }
+
+
+            // Calculate base state withholding (percentage)
+            let stateTax = taxable * (src.stateWithholding || 0) / 100;
+
+            // Add extra state withholding (per paycheck × pay periods)
+            // Only applies to W-2 income
+            let extraStateWH = 0;
+            if (t.hasFICA) {
+                const extraStatePerPaycheck = src.extraStateWithholding || 0;
+                const payPeriodsPerMonth = getPayPeriodsPerMonth(src.payFrequency || 'monthly');
+                extraStateWH = extraStatePerPaycheck * payPeriodsPerMonth;
+                stateTax += extraStateWH;
+            }
+
+            let ficaSS = 0, ficaMed = 0, seTax = 0, newYtd = ytdWages, newYtdAll = ytdAllWages;
+
+            // W-2 FICA
+            if (t.hasFICA) {
+                const ssRate = $v('ssTaxRate') / 100, ssBase = $v('ssWageBase');
+                const medRate = $v('medicareTaxRate') / 100, addMedRate = $v('addlMedicareRate') / 100;
+                newYtd = ytdWages + gross;
+                newYtdAll = ytdAllWages + gross;
+                if (ytdWages < ssBase) ficaSS = Math.min(gross, ssBase - ytdWages) * ssRate;
+                ficaMed = gross * medRate;
+                // Use filing-status-aware threshold for Additional Medicare Tax
+                // Use the income source's filing status, or default to married_joint
+                const filingStatus = src.w4Settings?.filingStatus || 'married_joint';
+                const addMedThreshold = ADDITIONAL_MEDICARE_THRESHOLDS[filingStatus] || 200000;
+                if (newYtdAll > addMedThreshold) {
+                    ficaMed += (ytdAllWages >= addMedThreshold ? gross : newYtdAll - addMedThreshold) * addMedRate;
+                }
+            }
+
+            // Self-Employment Tax for 1099-NEC
+            if (t.hasSETax) {
+                const netEarnings = gross * SE_NET_EARNINGS_FACTOR;
+                const ssBase = $v('ssWageBase');
+                // SE SS tax (only up to wage base, considering W-2 wages already paid)
+                const remainingSSBase = Math.max(0, ssBase - ytdAllWages);
+                const seSS = Math.min(netEarnings, remainingSSBase) * SE_TAX_SS_RATE;
+                // SE Medicare tax (no cap)
+                const seMed = netEarnings * SE_TAX_MED_RATE;
+                // Additional Medicare for SE income
+                const filingStatus = src.w4Settings?.filingStatus || 'married_joint';
+                const addMedThreshold = ADDITIONAL_MEDICARE_THRESHOLDS[filingStatus] || 200000;
+                let seAddMed = 0;
+                const newYtdWithSE = ytdAllWages + gross;
+                if (newYtdWithSE > addMedThreshold) {
+                    const addMedRate = $v('addlMedicareRate') / 100;
+                    seAddMed = (ytdAllWages >= addMedThreshold ? gross : newYtdWithSE - addMedThreshold) * addMedRate;
+                }
+                seTax = seSS + seMed + seAddMed;
+                newYtdAll = ytdAllWages + gross;
+            }
+
+            // Net calculation: gross - preTax 401k - taxes - roth - afterTax - FICA - SE Tax - loan payments
+            const net = taxable - fedTax - stateTax - roth - afterTax - ficaSS - ficaMed - seTax - loanPayment;
+
+            return {
+                gross, fedTax, stateTax, ficaSS, ficaMed, seTax,
+                preTax, roth, afterTax, loanPayment,
+                extraFedWH, extraStateWH,
+                net, newYtd, newYtdAll, newOwnerYtd401k, hitLimit
+            };
+        }
+
+        function recalculate() {
+            const results = {
+                months: [],
+                totals: {
+                    gross: 0, fedTax: 0, stateTax: 0, ficaSS: 0, ficaMed: 0, seTax: 0,
+                    preTax: 0, roth: 0, afterTax: 0, loanPayments: 0,
+                    extraFedWH: 0, extraStateWH: 0,
+                    net: 0, bySource: {}
+                }
+            };
+            const ytdBySource = {};
+            let ytdAllWages = 0; // Track combined wages across ALL sources for Additional Medicare
+
+            // Per-owner 401(k) YTD tracking
+            const taxYear = parseInt($t('taxYear')) || 2026;
+            const clientBirthYear = $v('clientBirthYear');
+            const spouseBirthYear = $v('spouseBirthYear');
+            const ownerLimits = {
+                client: get401kLimit(clientBirthYear, taxYear),
+                spouse: get401kLimit(spouseBirthYear, taxYear)
+            };
+            const ownerYtd401k = { client: 0, spouse: 0 };
+
+            for (let m = 0; m < 12; m++) {
+                const mo = {
+                    sources: {},
+                    totals: {
+                        gross: 0, fedTax: 0, stateTax: 0, fica: 0, seTax: 0,
+                        k401: 0, loanPayments: 0, extraFedWH: 0, extraStateWH: 0, net: 0
+                    }
+                };
+
+                incomeSources.forEach(src => {
+                    if (!ytdBySource[src.id]) ytdBySource[src.id] = 0;
+                    const owner = src.owner || 'client';
+                    const c = calcMonth(src, m, ytdBySource[src.id], ytdAllWages, ownerYtd401k[owner], ownerLimits[owner]);
+                    ytdBySource[src.id] = c.newYtd;
+                    ytdAllWages = c.newYtdAll;
+                    ownerYtd401k[owner] = c.newOwnerYtd401k; // Update per-owner YTD
+                    mo.sources[src.id] = c;
+
+                    mo.totals.gross += c.gross;
+                    mo.totals.fedTax += c.fedTax;
+                    mo.totals.stateTax += c.stateTax;
+                    mo.totals.fica += c.ficaSS + c.ficaMed;
+                    mo.totals.seTax += c.seTax;
+                    mo.totals.k401 += c.preTax + c.roth + c.afterTax;
+                    mo.totals.loanPayments += c.loanPayment;
+                    mo.totals.extraFedWH += c.extraFedWH;
+                    mo.totals.extraStateWH += c.extraStateWH;
+                    mo.totals.net += c.net;
+
+                    if (!results.totals.bySource[src.id]) results.totals.bySource[src.id] = 0;
+                    results.totals.bySource[src.id] += c.gross;
+
+                    results.totals.gross += c.gross;
+                    results.totals.fedTax += c.fedTax;
+                    results.totals.stateTax += c.stateTax;
+                    results.totals.ficaSS += c.ficaSS;
+                    results.totals.ficaMed += c.ficaMed;
+                    results.totals.seTax += c.seTax;
+                    results.totals.preTax += c.preTax;
+                    results.totals.roth += c.roth;
+                    results.totals.afterTax += c.afterTax;
+                    results.totals.loanPayments += c.loanPayment;
+                    results.totals.extraFedWH += c.extraFedWH;
+                    results.totals.extraStateWH += c.extraStateWH;
+                    results.totals.net += c.net;
+                });
+
+                mo.totals.expenses = $v('livingExpenses');
+                mo.totals.surplus = mo.totals.net - mo.totals.expenses;
+                results.months.push(mo);
+            }
+
+            results.totals.expenses = $v('livingExpenses') * 12;
+            results.totals.surplus = results.totals.net - results.totals.expenses;
+            // Store per-owner 401(k) info for UI display
+            results.totals.owner401k = ownerYtd401k;
+            results.totals.ownerLimits = ownerLimits;
+            cachedResults = results;
+            updateUI();
+        }
+
+        function updateUI() {
+            if (!cachedResults) return;
+            const r = cachedResults.totals, totalSavings = savingsItems.reduce((s, i) => s + (i.amount || 0), 0);
+
+            // Income Summary
+            let html = incomeSources.map(s => '<div class="summary-item"><span class="label">' + (s.name || 'Income') + '</span><span class="value">' + fC(r.bySource[s.id] || 0) + '</span></div>').join('');
+            html += '<div class="summary-item total"><span class="label">Total Gross</span><span class="value green">' + fC(r.gross) + '</span></div>';
+            $('incomeSummary').innerHTML = html || '<div class="summary-item"><span class="label">No income</span><span class="value">$0</span></div>';
+
+            // Tax Summary - Now includes breakdown of extra withholding
+            let taxHtml = '<div class="summary-item"><span class="label">Federal Withheld (% based)</span><span class="value red">' + fC(r.fedTax - r.extraFedWH) + '</span></div>';
+            if (r.extraFedWH > 0) {
+                taxHtml += '<div class="summary-item"><span class="label">↳ Extra Fed W/H (4c)</span><span class="value red">' + fC(r.extraFedWH) + '</span></div>';
+            }
+            taxHtml += '<div class="summary-item"><span class="label">State Withheld (% based)</span><span class="value red">' + fC(r.stateTax - r.extraStateWH) + '</span></div>';
+            if (r.extraStateWH > 0) {
+                taxHtml += '<div class="summary-item"><span class="label">↳ Extra State W/H</span><span class="value red">' + fC(r.extraStateWH) + '</span></div>';
+            }
+            taxHtml += '<div class="summary-item"><span class="label">FICA - Social Security</span><span class="value blue">' + fC(r.ficaSS) + '</span></div>';
+            taxHtml += '<div class="summary-item"><span class="label">FICA - Medicare</span><span class="value blue">' + fC(r.ficaMed) + '</span></div>';
+            if (r.seTax > 0) {
+                taxHtml += '<div class="summary-item"><span class="label">Self-Employment Tax</span><span class="value blue">' + fC(r.seTax) + '</span></div>';
+            }
+            taxHtml += '<div class="summary-item total"><span class="label">Total Taxes</span><span class="value red">' + fC(r.fedTax + r.stateTax + r.ficaSS + r.ficaMed + r.seTax) + '</span></div>';
+            $('taxSummary').innerHTML = taxHtml;
+
+            // Check 401(k) contribution limits using actual per-owner results
+            const ownerContribs = r.owner401k || { client: 0, spouse: 0 };
+            const limits = r.ownerLimits || { client: LIMIT_402G_REGULAR, spouse: LIMIT_402G_REGULAR };
+            const taxYear = parseInt($t('taxYear')) || 2026;
+            const clientBirthYear = $v('clientBirthYear');
+            const spouseBirthYear = $v('spouseBirthYear');
+
+            let k401Html = '';
+
+            // Client contributions
+            if (clientBirthYear) {
+                const clientAge = taxYear - clientBirthYear;
+                const pct = limits.client > 0 ? Math.min(100, (ownerContribs.client / limits.client) * 100) : 0;
+                const isMaxed = ownerContribs.client >= limits.client;
+                let catchupNote = '';
+                if (clientAge >= 60 && clientAge <= 63) catchupNote = ' (Super Catch-up)';
+                else if (clientAge >= 50) catchupNote = ' (Catch-up)';
+
+                k401Html += `<div class="summary-item" style="background:rgba(0,32,91,0.05);border-radius:4px;margin-bottom:8px;padding:8px">
+                    <span class="label">Client (age ${clientAge})${catchupNote}</span>
+                    <span class="value ${isMaxed ? 'green' : 'blue'}">${fC(ownerContribs.client)} / ${fC(limits.client)}${isMaxed ? ' ✓ MAX' : ''}</span>
+                </div>`;
+            }
+
+            // Spouse contributions (only if they have a birth year)
+            if (spouseBirthYear) {
+                const spouseAge = taxYear - spouseBirthYear;
+                const pct = limits.spouse > 0 ? Math.min(100, (ownerContribs.spouse / limits.spouse) * 100) : 0;
+                const isMaxed = ownerContribs.spouse >= limits.spouse;
+                let catchupNote = '';
+                if (spouseAge >= 60 && spouseAge <= 63) catchupNote = ' (Super Catch-up)';
+                else if (spouseAge >= 50) catchupNote = ' (Catch-up)';
+
+                k401Html += `<div class="summary-item" style="background:rgba(0,32,91,0.05);border-radius:4px;margin-bottom:8px;padding:8px">
+                    <span class="label">Spouse (age ${spouseAge})${catchupNote}</span>
+                    <span class="value ${isMaxed ? 'green' : 'blue'}">${fC(ownerContribs.spouse)} / ${fC(limits.spouse)}${isMaxed ? ' ✓ MAX' : ''}</span>
+                </div>`;
+            }
+
+            // Show breakdown
+            k401Html += '<div class="summary-item"><span class="label">Pre-Tax</span><span class="value blue">' + fC(r.preTax) + '</span></div>';
+            k401Html += '<div class="summary-item"><span class="label">Roth</span><span class="value blue">' + fC(r.roth) + '</span></div>';
+            k401Html += '<div class="summary-item"><span class="label">After-Tax</span><span class="value blue">' + fC(r.afterTax) + '</span></div>';
+            k401Html += '<div class="summary-item total"><span class="label">Total 401(k)</span><span class="value blue">' + fC(r.preTax + r.roth + r.afterTax) + '</span></div>';
+
+            $('k401Summary').innerHTML = k401Html;
+
+            // 401(k) Loan Summary
+            if (r.loanPayments > 0) {
+                $('loanSummary').innerHTML = '<div class="summary-item"><span class="label">Annual Loan Payments</span><span class="value gold">' + fC(r.loanPayments) + '</span></div><div class="summary-item"><span class="label">Monthly Average</span><span class="value">' + fC(r.loanPayments / 12) + '</span></div>';
+            } else {
+                $('loanSummary').innerHTML = '<div class="summary-item"><span class="label">No active loans</span><span class="value">$0</span></div><p class="help-text" style="margin-top:8px">Configure loan payments in the 401(k) Settings tab.</p>';
+            }
+
+            // Savings Summary
+            html = savingsItems.map(s => '<div class="summary-item"><span class="label">' + (s.name || 'Savings') + '</span><span class="value gold">' + fC(s.amount) + '</span></div>').join('');
+            html += '<div class="summary-item total"><span class="label">Total Additional</span><span class="value gold">' + fC(totalSavings) + '</span></div>';
+            $('savingsSummary').innerHTML = html || '<div class="summary-item"><span class="label">None configured</span><span class="value">$0</span></div>';
+
+            // Expenses Summary
+            $('expensesSummary').innerHTML = '<div class="summary-item"><span class="label">Monthly × 12</span><span class="value red">' + fC(r.expenses) + '</span></div>';
+
+            // Grand Total
+            const grandTotal = r.preTax + r.roth + r.afterTax + totalSavings;
+            const netCash = r.surplus - totalSavings;
+            $('grandTotalSummary').innerHTML = '<div class="summary-item"><span class="label">401(k) Total</span><span class="value">' + fC(r.preTax + r.roth + r.afterTax) + '</span></div><div class="summary-item"><span class="label">Additional Savings</span><span class="value gold">' + fC(totalSavings) + '</span></div><div class="summary-item total"><span class="label">TOTAL SAVINGS</span><span class="value gold">' + fC(grandTotal) + '</span></div><div class="summary-item" style="margin-top:12px"><span class="label">Net Cash Remaining</span><span class="value ' + (netCash >= 0 ? 'green' : 'red') + '">' + fC(netCash) + '</span></div>';
+
+            renderMonthGrid();
+            renderMonthlyDetail();
+            renderK401Tables();
+        }
+
+        function renderMonthGrid() {
+            $('monthGrid').innerHTML = cachedResults.months.map((m, i) => '<div class="month-card"><div class="month-header">' + MONTHS[i].substring(0, 3) + '</div><div class="month-body"><div class="month-row"><span class="label">Gross</span><span class="value">' + fC(m.totals.gross) + '</span></div><div class="month-row"><span class="label">Taxes</span><span class="value" style="color:var(--danger)">' + fC(m.totals.fedTax + m.totals.stateTax + m.totals.fica) + '</span></div><div class="month-row"><span class="label">401k</span><span class="value" style="color:var(--brand-navy)">' + fC(m.totals.k401) + '</span></div>' + (m.totals.loanPayments > 0 ? '<div class="month-row"><span class="label">Loan</span><span class="value" style="color:var(--brand-gold-hover)">' + fC(m.totals.loanPayments) + '</span></div>' : '') + '<div class="month-row"><span class="label">Surplus</span><span class="value ' + (m.totals.surplus >= 0 ? 'positive' : 'negative') + '">' + fC(m.totals.surplus) + '</span></div></div></div>').join('');
+        }
+
+        function renderMonthlyDetail() {
+            // Get owner names for column headers
+            const clientName = $('clientFirstName')?.value || 'Client';
+            const spouseName = $('spouseName')?.value || 'Spouse';
+            const hasSpouse = $v('spouseBirthYear') > 0 || incomeSources.some(s => s.owner === 'spouse');
+
+            // Build column headers - split 401k into client/spouse
+            let cols = ['Month'].concat(incomeSources.map(s => (s.name || 'Inc').substring(0, 8))).concat(['Fed Tax', 'State', 'FICA']);
+            cols.push(clientName + ' 401k');
+            if (hasSpouse) cols.push(spouseName + ' 401k');
+            cols = cols.concat(['401k Loan', 'Net', 'Expenses', 'Surplus']);
+            $('monthlyHead').innerHTML = '<tr>' + cols.map(c => '<th class="' + (c !== 'Month' ? 'number' : '') + '">' + c + '</th>').join('') + '</tr>';
+
+            // Track per-owner 401k totals for footer
+            let client401kTotal = 0, spouse401kTotal = 0;
+
+            $('monthlyBody').innerHTML = cachedResults.months.map((m, i) => {
+                let cells = '<td><strong>' + MONTHS[i] + '</strong></td>';
+                let client401k = 0, spouse401k = 0;
+
+                incomeSources.forEach(s => {
+                    const d = m.sources[s.id];
+                    cells += '<td class="number">' + (d?.gross ? fCP(d.gross) : '-') + '</td>';
+                    // Track 401k by owner
+                    if (d) {
+                        const owner = s.owner || 'client';
+                        const k401 = (d.preTax || 0) + (d.roth || 0) + (d.afterTax || 0);
+                        if (owner === 'client') client401k += k401;
+                        else spouse401k += k401;
+                    }
+                });
+
+                client401kTotal += client401k;
+                spouse401kTotal += spouse401k;
+
+                cells += '<td class="number" style="color:var(--danger)">' + fCP(m.totals.fedTax) + '</td>';
+                cells += '<td class="number" style="color:var(--danger)">' + fCP(m.totals.stateTax) + '</td>';
+                cells += '<td class="number" style="color:var(--brand-navy)">' + fCP(m.totals.fica) + '</td>';
+                cells += '<td class="number" style="color:var(--brand-navy)">' + fCP(client401k) + '</td>';
+                if (hasSpouse) cells += '<td class="number" style="color:var(--brand-navy)">' + fCP(spouse401k) + '</td>';
+                cells += '<td class="number" style="color:var(--brand-gold-hover)">' + fCP(m.totals.loanPayments) + '</td>';
+                cells += '<td class="number">' + fCP(m.totals.net) + '</td>';
+                cells += '<td class="number" style="color:var(--danger)">' + fCP(m.totals.expenses) + '</td>';
+                cells += '<td class="number" style="color:var(' + (m.totals.surplus >= 0 ? '--success' : '--danger') + ')">' + fCP(m.totals.surplus) + '</td>';
+                return '<tr>' + cells + '</tr>';
+            }).join('');
+
+            const r = cachedResults.totals;
+            let foot = '<td><strong>TOTAL</strong></td>';
+            incomeSources.forEach(s => foot += '<td class="number"><strong>' + fC(r.bySource[s.id] || 0) + '</strong></td>');
+            foot += '<td class="number" style="color:var(--danger)"><strong>' + fC(r.fedTax) + '</strong></td>';
+            foot += '<td class="number" style="color:var(--danger)"><strong>' + fC(r.stateTax) + '</strong></td>';
+            foot += '<td class="number" style="color:var(--brand-navy)"><strong>' + fC(r.ficaSS + r.ficaMed) + '</strong></td>';
+            foot += '<td class="number" style="color:var(--brand-navy)"><strong>' + fC(client401kTotal) + '</strong></td>';
+            if (hasSpouse) foot += '<td class="number" style="color:var(--brand-navy)"><strong>' + fC(spouse401kTotal) + '</strong></td>';
+            foot += '<td class="number" style="color:var(--brand-gold-hover)"><strong>' + fC(r.loanPayments) + '</strong></td>';
+            foot += '<td class="number"><strong>' + fC(r.net) + '</strong></td>';
+            foot += '<td class="number" style="color:var(--danger)"><strong>' + fC(r.expenses) + '</strong></td>';
+            foot += '<td class="number" style="color:var(' + (r.surplus >= 0 ? '--success' : '--danger') + ')"><strong>' + fC(r.surplus) + '</strong></td>';
+            $('monthlyFoot').innerHTML = '<tr style="background:var(--brand-light)">' + foot + '</tr>';
+        }
+
+        // Update loan payment for a specific source and month
+        function updateLoan(srcId, month, value) {
+            if (!monthlyLoans[srcId]) monthlyLoans[srcId] = MONTHS.map(() => 0);
+            monthlyLoans[srcId][month] = parseFloat(value) || 0;
+            recalculate();
+        }
+
+        // Apply uniform loan payment to all months for a source
+        function applyUniformLoan(srcId) {
+            const inputEl = document.getElementById('uniformLoan' + srcId);
+            const amount = parseFloat(inputEl?.value) || 0;
+            if (!monthlyLoans[srcId]) monthlyLoans[srcId] = MONTHS.map(() => 0);
+            for (let i = 0; i < 12; i++) {
+                monthlyLoans[srcId][i] = amount;
+            }
+            renderK401Tables();
+            recalculate();
+        }
+
+        function renderK401Tables() {
+            const eligible = incomeSources.filter(s => INCOME_TYPES[s.type].has401k && s.has401k);
+            if (!eligible.length) {
+                $('k401Container').innerHTML = '<p class="help-text">Add W-2 income with 401(k) enabled to configure contributions.</p>';
+                return;
+            }
+
+            $('k401Container').innerHTML = eligible.map(src => {
+                if (!monthlyK401[src.id]) monthlyK401[src.id] = MONTHS.map(() => ({ preTax: 0, roth: 0, afterTax: 0 }));
+                if (!monthlyLoans[src.id]) monthlyLoans[src.id] = MONTHS.map(() => 0);
+
+                const annualLoan = monthlyLoans[src.id].reduce((a, b) => a + b, 0);
+                const k401Mode = src.k401Mode || 'uniform';
+                const uniform = src.uniformK401 || { preTax: 0, roth: 0, afterTax: 0 };
+
+                // Calculate totals for display
+                const sampleGross = getMonthlyGross(src, 0);
+                const uniformPt$ = sampleGross * uniform.preTax / 100;
+                const uniformRo$ = sampleGross * uniform.roth / 100;
+                const uniformAt$ = sampleGross * uniform.afterTax / 100;
+
+                // Build contribution mode toggle
+                const modeToggleHtml = `
+                    <div class="income-type-toggle" style="margin-bottom:16px">
+                        <button class="toggle-btn ${k401Mode === 'uniform' ? 'active' : ''}" onclick="setK401Mode(${src.id},'uniform')">Same for All Months</button>
+                        <button class="toggle-btn ${k401Mode === 'variable' ? 'active' : ''}" onclick="setK401Mode(${src.id},'variable')">Vary by Month</button>
+                    </div>`;
+
+                // Build uniform mode UI (simplified single row)
+                const uniformModeHtml = k401Mode === 'uniform' ? `
+                    <div style="background:rgba(212,175,55,0.1);border:2px solid var(--brand-gold);border-radius:8px;padding:16px;margin-bottom:16px">
+                        <p class="help-text" style="margin-bottom:12px">Set contribution percentages once to apply to all 12 months:</p>
+                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+                            <div class="input-group">
+                                <label>Pre-Tax %</label>
+                                <div class="input-with-suffix">
+                                    <input type="number" id="uniformPreTax${src.id}" value="${uniform.preTax}" step="0.5" onchange="updateUniformK401(${src.id},'preTax',this.value)">
+                                    <span class="suffix">%</span>
+                                </div>
+                                <p class="help-text">${fC(uniformPt$)}/mo</p>
+                            </div>
+                            <div class="input-group">
+                                <label>Roth %</label>
+                                <div class="input-with-suffix">
+                                    <input type="number" id="uniformRoth${src.id}" value="${uniform.roth}" step="0.5" onchange="updateUniformK401(${src.id},'roth',this.value)">
+                                    <span class="suffix">%</span>
+                                </div>
+                                <p class="help-text">${fC(uniformRo$)}/mo</p>
+                            </div>
+                            <div class="input-group">
+                                <label>After-Tax %</label>
+                                <div class="input-with-suffix">
+                                    <input type="number" id="uniformAfterTax${src.id}" value="${uniform.afterTax}" step="0.5" onchange="updateUniformK401(${src.id},'afterTax',this.value)">
+                                    <span class="suffix">%</span>
+                                </div>
+                                <p class="help-text">${fC(uniformAt$)}/mo</p>
+                            </div>
+                        </div>
+                        <div style="margin-top:12px;text-align:right">
+                            <button class="small-btn gold" onclick="applyUniformK401(${src.id})">Apply to All Months</button>
+                        </div>
+                    </div>` : '';
+
+                // Calculate owner limit for MAX indicator
+                const owner = src.owner || 'client';
+                const taxYear = parseInt($t('taxYear')) || 2026;
+                const birthYear = owner === 'client' ? $v('clientBirthYear') : $v('spouseBirthYear');
+                const ownerLimit = get401kLimit(birthYear, taxYear);
+
+                // Build variable mode UI (full 12-month table) with MAX indicators and totals
+                let runningYtd = 0;
+                const variableModeHtml = k401Mode === 'variable' ? `
+                    <table class="detail-table">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Gross</th>
+                                <th>PreTax %</th>
+                                <th>PreTax $</th>
+                                <th>Roth %</th>
+                                <th>Roth $</th>
+                                <th>AfterTax %</th>
+                                <th>AfterTax $</th>
+                                <th>Loan $</th>
+                                <th class="number">Total</th>
+                                <th class="number">YTD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${MONTHS.map((mo, i) => {
+                    const g = getMonthlyGross(src, i), k = monthlyK401[src.id][i];
+                    const pt = g * k.preTax / 100, ro = g * k.roth / 100, at = g * k.afterTax / 100;
+                    const elective = pt + ro;
+                    const remaining = Math.max(0, ownerLimit - runningYtd);
+                    const capped = elective > remaining;
+                    runningYtd += Math.min(elective, remaining);
+                    const loan = monthlyLoans[src.id][i] || 0;
+                    const maxBadge = capped ? '<span style="background:var(--success);color:white;font-size:9px;padding:2px 6px;border-radius:10px;margin-left:4px">MAX</span>' : '';
+                    return `<tr style="${capped ? 'background:rgba(34,197,94,0.1)' : ''}">
+                                    <td><strong>${mo}</strong>${maxBadge}</td>
+                                    <td class="number">${fCP(g)}</td>
+                                    <td><input type="number" value="${k.preTax}" step="0.1" style="width:55px" onchange="updateK401(${src.id},${i},'preTax',this.value)"></td>
+                                    <td><input type="number" value="${Math.round(pt)}" step="100" style="width:70px" onchange="updateK401Dollar(${src.id},${i},'preTax',this.value)"></td>
+                                    <td><input type="number" value="${k.roth}" step="0.1" style="width:55px" onchange="updateK401(${src.id},${i},'roth',this.value)"></td>
+                                    <td><input type="number" value="${Math.round(ro)}" step="100" style="width:70px" onchange="updateK401Dollar(${src.id},${i},'roth',this.value)"></td>
+                                    <td><input type="number" value="${k.afterTax}" step="0.1" style="width:55px" onchange="updateK401(${src.id},${i},'afterTax',this.value)"></td>
+                                    <td><input type="number" value="${Math.round(at)}" step="100" style="width:70px" onchange="updateK401Dollar(${src.id},${i},'afterTax',this.value)"></td>
+                                    <td><input type="number" value="${loan}" step="50" style="width:70px" onchange="updateLoan(${src.id},${i},this.value)"></td>
+                                    <td class="number" style="color:var(--brand-navy);font-weight:700">${fCP(pt + ro + at)}</td>
+                                    <td class="number" style="color:${runningYtd >= ownerLimit ? 'var(--success)' : 'var(--brand-navy)'};font-weight:700">${fCP(runningYtd)}</td>
+                                </tr>`;
+                }).join('')}
+                        </tbody>
+                        <tfoot>
+                            <tr style="background:var(--brand-light);font-weight:700">
+                                <td colspan="2">TOTALS</td>
+                                <td></td>
+                                <td class="number">${fC(monthlyK401[src.id].reduce((s, k, i) => s + getMonthlyGross(src, i) * k.preTax / 100, 0))}</td>
+                                <td></td>
+                                <td class="number">${fC(monthlyK401[src.id].reduce((s, k, i) => s + getMonthlyGross(src, i) * k.roth / 100, 0))}</td>
+                                <td></td>
+                                <td class="number">${fC(monthlyK401[src.id].reduce((s, k, i) => s + getMonthlyGross(src, i) * k.afterTax / 100, 0))}</td>
+                                <td class="number">${fC(monthlyLoans[src.id].reduce((a, b) => a + b, 0))}</td>
+                                <td class="number" style="color:var(--brand-navy)">${fC(monthlyK401[src.id].reduce((s, k, i) => s + getMonthlyGross(src, i) * (k.preTax + k.roth + k.afterTax) / 100, 0))}</td>
+                                <td class="number" style="color:${runningYtd >= ownerLimit ? 'var(--success)' : 'var(--brand-navy)'}">Limit: ${fC(ownerLimit)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>` : '';
+
+                // Summary showing current totals (always visible)
+                const totalK401 = monthlyK401[src.id].reduce((sum, k) => {
+                    const g = getMonthlyGross(src, 0); // Use consistent monthly gross for estimate
+                    return sum + (g * k.preTax / 100) + (g * k.roth / 100) + (g * k.afterTax / 100);
+                }, 0);
+
+                return `<div style="margin-bottom:24px">
+                    <h4 style="color:var(--brand-navy);margin-bottom:12px;font-weight:700">${src.name || 'Income'}</h4>
+                    
+                    <!-- 401(k) Contribution Mode Toggle -->
+                    ${modeToggleHtml}
+                    
+                    <!-- Contribution Input UI (either uniform or variable) -->
+                    ${uniformModeHtml}
+                    ${variableModeHtml}
+                    
+                    <!-- 401(k) Loan Section -->
+                    <div class="loan-section">
+                        <h5>401(k) Loan Repayments</h5>
+                        <p class="help-text" style="margin-bottom:12px">Loan payments are deducted from your paycheck after-tax and reduce your net take-home pay.</p>
+                        
+                        <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+                            <label style="font-size:11px;font-weight:600;color:var(--brand-navy)">Apply to all months:</label>
+                            <div class="input-with-prefix" style="width:120px">
+                                <span class="prefix">$</span>
+                                <input type="number" id="uniformLoan${src.id}" value="0" step="50" style="font-size:12px">
+                            </div>
+                            <button class="small-btn gold" onclick="applyUniformLoan(${src.id})">Apply</button>
+                        </div>
+                        
+                        <div class="loan-grid">
+                            ${MONTHS_SHORT.map((mo, i) => `
+                                <div class="loan-month">
+                                    <label>${mo}</label>
+                                    <div class="input-with-prefix">
+                                        <span class="prefix">$</span>
+                                        <input type="number" value="${monthlyLoans[src.id][i] || 0}" step="50" onchange="updateLoan(${src.id},${i},this.value)">
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div class="loan-total">
+                            <span class="label">Annual Loan Payments:</span>
+                            <span class="value">${fC(annualLoan)}</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function updateK401(srcId, month, field, value) {
+            if (!monthlyK401[srcId]) monthlyK401[srcId] = MONTHS.map(() => ({ preTax: 0, roth: 0, afterTax: 0 }));
+            monthlyK401[srcId][month][field] = parseFloat(value) || 0;
+            recalculate();
+        }
+
+        function updateK401Dollar(srcId, month, field, value) {
+            const src = incomeSources.find(s => s.id === srcId);
+            if (!src) return;
+            const gross = getMonthlyGross(src, month);
+            const pct = gross > 0 ? (parseFloat(value) || 0) / gross * 100 : 0;
+            updateK401(srcId, month, field, pct);
+        }
+
+        // Set 401k contribution mode (uniform or variable)
+        function setK401Mode(srcId, mode) {
+            const src = incomeSources.find(s => s.id === srcId);
+            if (!src) return;
+            src.k401Mode = mode;
+            renderK401Tables();
+        }
+
+        // Update uniform 401k contribution values (stored on income source)
+        function updateUniformK401(srcId, field, value) {
+            const src = incomeSources.find(s => s.id === srcId);
+            if (!src) return;
+            if (!src.uniformK401) src.uniformK401 = { preTax: 0, roth: 0, afterTax: 0 };
+            src.uniformK401[field] = parseFloat(value) || 0;
+            renderK401Tables(); // Re-render to update the $/mo display
+        }
+
+        // Apply uniform 401k contribution values to all 12 months
+        function applyUniformK401(srcId) {
+            const src = incomeSources.find(s => s.id === srcId);
+            if (!src) return;
+            const uniform = src.uniformK401 || { preTax: 0, roth: 0, afterTax: 0 };
+            if (!monthlyK401[srcId]) monthlyK401[srcId] = MONTHS.map(() => ({ preTax: 0, roth: 0, afterTax: 0 }));
+
+            // Apply uniform values to all 12 months
+            for (let i = 0; i < 12; i++) {
+                monthlyK401[srcId][i] = {
+                    preTax: uniform.preTax,
+                    roth: uniform.roth,
+                    afterTax: uniform.afterTax
+                };
+            }
+
+            recalculate();
+            toast('Applied contribution rates to all months');
+        }
+
+        function showTab(name) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            $('overview-tab').style.display = name === 'overview' ? '' : 'none';
+            $('monthly-tab').style.display = name === 'monthly' ? '' : 'none';
+            $('401k-tab').style.display = name === '401k' ? '' : 'none';
+        }
+
+        function saveState() {
+            const state = {
+                version: 7, // Bumped version for paycheck entry + 401k mode features
+                savedAt: new Date().toISOString(),
+                client: {
+                    firstName: $t('clientFirstName'),
+                    lastName: $t('clientLastName'),
+                    spouse: $t('spouseName'),
+                    year: $t('taxYear'),
+                    state: $t('clientState'),
+                    filing: $t('filingStatus'),
+                    dependents: $v('dependents'),
+                    otherIncome: $v('otherIncome'),
+                    deductions: $v('deductions'),
+                    extraWithholding: $v('extraWithholding'),
+                    extraStateWithholding: $v('extraStateWithholding') // NEW
+                },
+                fica: {
+                    ssRate: $v('ssTaxRate'),
+                    ssBase: $v('ssWageBase'),
+                    medRate: $v('medicareTaxRate'),
+                    addMedRate: $v('addlMedicareRate')
+                },
+                livingExpenses: $v('livingExpenses'),
+                incomeSources,
+                savingsItems,
+                monthlyK401,
+                monthlyLoans, // NEW
+                nextIncomeId,
+                nextSavingsId
+            };
+            const name = (state.client.firstName + '-' + state.client.lastName).replace(/[^a-zA-Z0-9-]/g, '') || 'client';
+            const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'cashflow-' + name + '-' + state.client.year + '.json';
+            a.click();
+            toast('State saved!');
+        }
+
+        function loadState(e) {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                try {
+                    const s = JSON.parse(ev.target.result);
+
+                    // Basic schema validation - ensure expected structure
+                    const validateSchema = (data) => {
+                        const errors = [];
+                        if (typeof data !== 'object' || data === null) {
+                            errors.push('Invalid file format: not a valid JSON object');
+                            return errors;
+                        }
+                        // Check for arrays where expected
+                        if (data.incomeSources && !Array.isArray(data.incomeSources)) {
+                            errors.push('incomeSources must be an array');
+                        }
+                        if (data.savingsItems && !Array.isArray(data.savingsItems)) {
+                            errors.push('savingsItems must be an array');
+                        }
+                        // Validate numeric fields are reasonable
+                        if (data.livingExpenses && (isNaN(data.livingExpenses) || data.livingExpenses < 0)) {
+                            errors.push('livingExpenses must be a non-negative number');
+                        }
+                        // Check for required structure
+                        if (!data.client && !data.incomeSources) {
+                            errors.push('File appears to be missing required data (client or incomeSources)');
+                        }
+                        return errors;
+                    };
+
+                    const schemaErrors = validateSchema(s);
+                    if (schemaErrors.length > 0) {
+                        toast('⚠️ Import warning: ' + schemaErrors[0]);
+                        console.warn('Import schema validation warnings:', schemaErrors);
+                    }
+
+                    if (s.client) {
+                        $('clientFirstName').value = s.client.firstName || '';
+                        $('clientLastName').value = s.client.lastName || '';
+                        $('spouseName').value = s.client.spouse || '';
+                        $('taxYear').value = s.client.year || '2026';
+                        $('clientState').value = s.client.state || 'MO';
+                        $('filingStatus').value = s.client.filing || 'married_joint';
+                        $('dependents').value = s.client.dependents || 0;
+                        $('otherIncome').value = s.client.otherIncome || 0;
+                        $('deductions').value = s.client.deductions || 0;
+                        $('extraWithholding').value = s.client.extraWithholding || 0;
+                        $('extraStateWithholding').value = s.client.extraStateWithholding || 0; // NEW
+                    }
+                    if (s.fica) {
+                        $('ssTaxRate').value = s.fica.ssRate || 6.2;
+                        $('ssWageBase').value = s.fica.ssBase || 184500;
+                        $('medicareTaxRate').value = s.fica.medRate || 1.45;
+                        $('addlMedicareRate').value = s.fica.addMedRate || 0.9;
+                    }
+                    $('livingExpenses').value = s.livingExpenses || 0;
+
+                    // Handle migration from old format
+                    incomeSources = (s.incomeSources || []).map(src => {
+                        if (src.isLumpSum !== undefined && src.incomeMode === undefined) {
+                            src.incomeMode = src.isLumpSum ? 'lumpsum' : 'consistent';
+                        }
+                        if (!src.monthlyAmounts) {
+                            src.monthlyAmounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+                        }
+                        if (!src.incomeMode) {
+                            src.incomeMode = 'consistent';
+                        }
+                        if (!src.payFrequency) {
+                            src.payFrequency = 'monthly';
+                        }
+                        // Migration: Convert old monthlyAmount to paycheckAmount
+                        if (src.paycheckAmount === undefined && src.monthlyAmount !== undefined) {
+                            // For consistent mode, monthlyAmount was the full monthly amount
+                            // With monthly frequency, paycheck = monthly, so we can use monthlyAmount directly
+                            // For other frequencies, we'd need to know the original frequency - assume monthly for migration
+                            src.paycheckAmount = src.monthlyAmount;
+                        }
+                        if (src.paycheckAmount === undefined) {
+                            src.paycheckAmount = 0;
+                        }
+                        // Initialize new 401k mode fields
+                        if (!src.k401Mode) {
+                            src.k401Mode = 'uniform';
+                        }
+                        if (!src.uniformK401) {
+                            src.uniformK401 = { preTax: 0, roth: 0, afterTax: 0 };
+                        }
+                        return src;
+                    });
+
+                    savingsItems = s.savingsItems || [];
+                    monthlyK401 = s.monthlyK401 || {};
+                    monthlyLoans = s.monthlyLoans || {}; // NEW
+                    nextIncomeId = s.nextIncomeId || 1;
+                    nextSavingsId = s.nextSavingsId || 1;
+
+                    // Initialize loan arrays for any sources that don't have them
+                    incomeSources.forEach(src => {
+                        if (!monthlyLoans[src.id]) {
+                            monthlyLoans[src.id] = MONTHS.map(() => 0);
+                        }
+                    });
+
+                    updateHeader();
+                    renderIncomeSources();
+                    renderSavingsItems();
+                    recalculate();
+                    toast('State loaded!');
+                } catch (err) {
+                    alert('Error: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        }
+
+        function resetAll() {
+            if (!confirm('Reset all data? This cannot be undone.')) return;
+            incomeSources = [];
+            savingsItems = [];
+            monthlyK401 = {};
+            monthlyLoans = {};
+            nextIncomeId = nextSavingsId = 1;
+            ['clientFirstName', 'clientLastName', 'spouseName'].forEach(id => $(id).value = '');
+            $('livingExpenses').value = 0;
+            $('extraWithholding').value = 0;
+            $('extraStateWithholding').value = 0;
+            updateHeader();
+            renderIncomeSources();
+            renderSavingsItems();
+            recalculate();
+            toast('All data reset!');
+        }
+
+        function exportPDF() {
+            if (!cachedResults) { alert('No data to export'); return; }
+            const jsPDF = window.jspdf.jsPDF, doc = new jsPDF('landscape', 'pt', 'letter');
+            const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight(), m = 40;
+            let y = m;
+            const navy = [0, 32, 91], gold = [212, 175, 55], white = [255, 255, 255], light = [249, 249, 247];
+            const clientName = ($t('clientFirstName') + ' ' + $t('clientLastName')).trim() || 'Client';
+            const spouse = $t('spouseName'), fullName = spouse ? clientName + ' & ' + spouse : clientName;
+            const year = $t('taxYear'), stateEl = $('clientState'), stateName = stateEl.options[stateEl.selectedIndex]?.text || '';
+            const filingEl = $('filingStatus'), filingName = filingEl.options[filingEl.selectedIndex]?.text || '';
+
+            doc.setFontSize(24);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(navy[0], navy[1], navy[2]);
+            doc.text(year + ' Cash Flow Analysis', pw / 2, y, { align: 'center' });
+            y += 8;
+            doc.setDrawColor(gold[0], gold[1], gold[2]);
+            doc.setLineWidth(3);
+            doc.line(pw / 2 - 100, y, pw / 2 + 100, y);
+            y += 20;
+            doc.setFontSize(16);
+            doc.setTextColor(gold[0], gold[1], gold[2]);
+            doc.text(fullName, pw / 2, y, { align: 'center' });
+            y += 18;
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 100, 100);
+            doc.text(filingName + ' • ' + stateName + ' • Generated ' + new Date().toLocaleDateString(), pw / 2, y, { align: 'center' });
+            doc.setTextColor(0);
+            y += 25;
+
+            const r = cachedResults.totals, totalSavings = savingsItems.reduce((s, i) => s + (i.amount || 0), 0);
+
+            // Build summary tables - now includes loan payments
+            const tables = [
+                [['Income', '']].concat(incomeSources.map(s => [s.name || 'Income', fC(r.bySource[s.id] || 0)])).concat([['Total Gross', fC(r.gross)]]),
+                [['Taxes', ''], ['Federal', fC(r.fedTax)], ['State', fC(r.stateTax)], ['FICA SS', fC(r.ficaSS)], ['FICA Med', fC(r.ficaMed)], ['Total', fC(r.fedTax + r.stateTax + r.ficaSS + r.ficaMed)]],
+                [['401(k)', ''], ['Pre-Tax', fC(r.preTax)], ['Roth', fC(r.roth)], ['After-Tax', fC(r.afterTax)], ['Loan Pmts', fC(r.loanPayments)], ['Net 401(k)', fC(r.preTax + r.roth + r.afterTax)]],
+                [['Savings', '']].concat(savingsItems.map(s => [s.name || 'Savings', fC(s.amount)])).concat([['Total', fC(totalSavings)]])
+            ];
+
+            const tw = (pw - m * 2 - 30) / 4;
+            tables.forEach((td, i) => {
+                doc.autoTable({
+                    startY: y,
+                    margin: { left: m + (i * (tw + 10)) },
+                    tableWidth: tw,
+                    body: td,
+                    theme: 'plain',
+                    styles: { fontSize: 8, cellPadding: 3 },
+                    columnStyles: { 0: {}, 1: { halign: 'right', fontStyle: 'bold' } },
+                    didParseCell: function (d) {
+                        if (d.row.index === 0) {
+                            d.cell.styles.fontStyle = 'bold';
+                            d.cell.styles.fillColor = navy;
+                            d.cell.styles.textColor = white;
+                        }
+                        if (d.row.index === td.length - 1) {
+                            d.cell.styles.fillColor = [253, 248, 227];
+                            d.cell.styles.textColor = navy;
+                        }
+                        if (d.row.index > 0 && d.row.index < td.length - 1 && d.row.index % 2 === 0) {
+                            d.cell.styles.fillColor = light;
+                        }
+                    }
+                });
+            });
+
+            y = doc.lastAutoTable.finalY + 15;
+            const gt = r.preTax + r.roth + r.afterTax + totalSavings, nc = r.surplus - totalSavings;
+            doc.setFillColor(navy[0], navy[1], navy[2]);
+            doc.roundedRect(m, y, pw - m * 2, 42, 5, 5, 'F');
+            doc.setDrawColor(gold[0], gold[1], gold[2]);
+            doc.setLineWidth(2);
+            doc.roundedRect(m, y, pw - m * 2, 42, 5, 5, 'S');
+            doc.setTextColor(gold[0], gold[1], gold[2]);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('TOTAL SAVINGS', m + 20, y + 16);
+            doc.setFontSize(15);
+            doc.setTextColor(255, 255, 255);
+            doc.text(fC(gt), m + 20, y + 32);
+            doc.setTextColor(gold[0], gold[1], gold[2]);
+            doc.setFontSize(11);
+            doc.text('NET CASH REMAINING', pw - m - 180, y + 16);
+            doc.setFontSize(15);
+            doc.setTextColor(nc >= 0 ? 74 : 239, nc >= 0 ? 222 : 68, nc >= 0 ? 128 : 68);
+            doc.text(fC(nc), pw - m - 180, y + 32);
+            y += 55;
+
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(navy[0], navy[1], navy[2]);
+            doc.text('Monthly Detail', m, y);
+            doc.setDrawColor(gold[0], gold[1], gold[2]);
+            doc.setLineWidth(2);
+            doc.line(m, y + 3, m + 80, y + 3);
+            y += 15;
+
+            // Monthly detail table - now includes 401k Loan column
+            const heads = ['Month'].concat(incomeSources.map(s => (s.name || 'Inc').substring(0, 7))).concat(['Fed', 'State', 'FICA', '401k', 'Loan', 'Net', 'Exp', 'Surplus']);
+            const rows = cachedResults.months.map((mo, i) => {
+                const row = [MONTHS[i].substring(0, 3)];
+                incomeSources.forEach(s => row.push(mo.sources[s.id]?.gross ? fCP(mo.sources[s.id].gross) : '-'));
+                row.push(fCP(mo.totals.fedTax), fCP(mo.totals.stateTax), fCP(mo.totals.fica), fCP(mo.totals.k401), fCP(mo.totals.loanPayments), fCP(mo.totals.net), fCP(mo.totals.expenses), fCP(mo.totals.surplus));
+                return row;
+            });
+
+            const totRow = ['TOTAL'];
+            incomeSources.forEach(s => totRow.push(fC(r.bySource[s.id] || 0)));
+            totRow.push(fC(r.fedTax), fC(r.stateTax), fC(r.ficaSS + r.ficaMed), fC(r.preTax + r.roth + r.afterTax), fC(r.loanPayments), fC(r.net), fC(r.expenses), fC(r.surplus));
+            rows.push(totRow);
+
+            doc.autoTable({
+                startY: y,
+                margin: { left: m, right: m },
+                head: [heads],
+                body: rows,
+                theme: 'striped',
+                styles: { fontSize: 7, cellPadding: 2 },
+                headStyles: { fillColor: navy, textColor: gold, fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: light },
+                columnStyles: Object.fromEntries(heads.map(function (_, i) { return [i, { halign: i === 0 ? 'left' : 'right' }] })),
+                didParseCell: function (d) {
+                    if (d.row.index === rows.length - 1) {
+                        d.cell.styles.fontStyle = 'bold';
+                        d.cell.styles.fillColor = [253, 248, 227];
+                        d.cell.styles.textColor = navy;
+                    }
+                }
+            });
+
+            const pc = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pc; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text('Page ' + i + '/' + pc, pw / 2, ph - 20, { align: 'center' });
+                doc.setTextColor(navy[0], navy[1], navy[2]);
+                doc.text('Cash Flow Calculator • Confidential', m, ph - 20);
+            }
+
+            doc.save('CashFlow-' + clientName.replace(/\s+/g, '-') + '-' + year + '.pdf');
+            toast('PDF exported!');
+        }
+
+        // Initialize
+        updateHeader();
+        renderIncomeSources();
+        renderSavingsItems();
+        recalculate();
+
+        // Initialize GlobalStateManager and sync profile data (if available)
+        if (typeof GlobalStateManager !== 'undefined') {
+            GlobalStateManager.init();
+
+            // Load profile from global state
+            function loadProfileFromState() {
+                const state = GlobalStateManager.getState();
+                if (state.client1?.name) {
+                    $('clientFirstName').value = state.client1.name;
+                }
+                if (state.client2?.name) {
+                    $('spouseName').value = state.client2.name;
+                }
+                if (state.filingStatus) {
+                    const fsMap = { 'mfj': 'married_joint', 'mfs': 'married_separate', 'single': 'single', 'hoh': 'head_household' };
+                    $('filingStatus').value = fsMap[state.filingStatus] || 'married_joint';
+                }
+                if (state.state) {
+                    $('clientState').value = state.state;
+                }
+
+                // Import income sources from profile if available and local list is empty
+                if (state.incomeSources && state.incomeSources.length > 0 && incomeSources.length === 0) {
+                    state.incomeSources.forEach(function (src) {
+                        const newSource = {
+                            id: nextIncomeId++,
+                            type: src.type || 'w2',
+                            name: src.name || GlobalStateManager.INCOME_TYPES[src.type]?.name || 'Income',
+                            annualGross: parseFloat(src.amount) || 0,
+                            startMonth: 0,
+                            endMonth: 11,
+                            includes401k: GlobalStateManager.INCOME_TYPES[src.type]?.has401k || false,
+                            priorityForExpenses: true,
+                            w2: GlobalStateManager.INCOME_TYPES[src.type]?.hasFICA || false,
+                            monthlyContrib: [],
+                            rothContrib: [],
+                            afterTaxContrib: []
+                        };
+                        // Initialize monthly arrays
+                        for (let i = 0; i < 12; i++) {
+                            newSource.monthlyContrib[i] = 0;
+                            newSource.rothContrib[i] = 0;
+                            newSource.afterTaxContrib[i] = 0;
+                        }
+                        incomeSources.push(newSource);
+                    });
+                    renderIncomeSources();
+                    recalculate();
+                }
+
+                updateHeader();
+            }
+
+            // Initial load
+            loadProfileFromState();
+            loadSavedScenarios();
+
+            // Listen for updates from parent/other tools
+            GlobalStateManager.subscribe(function (state) {
+                loadProfileFromState();
+            });
+
+            // Write changes back to global state
+            ['clientFirstName', 'spouseName', 'filingStatus', 'clientState'].forEach(function (id) {
+                $(id)?.addEventListener('change', function () {
+                    const fsMapRev = { 'married_joint': 'mfj', 'married_separate': 'mfs', 'single': 'single', 'head_household': 'hoh', 'widow': 'mfj' };
+                    GlobalStateManager.setState({
+                        client1: { name: $t('clientFirstName') },
+                        client2: { name: $t('spouseName') },
+                        filingStatus: fsMapRev[$t('filingStatus')] || 'mfj',
+                        state: $t('clientState')
+                    });
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>
